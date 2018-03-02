@@ -12,6 +12,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.List;
@@ -99,6 +100,7 @@ public class RentalListActivity extends AppCompatActivity {
                         arguments.putString(RentalDetailFragment.ARG_ITEM_ID, holder.mItem.id);
                         RentalDetailFragment fragment = new RentalDetailFragment();
                         fragment.setArguments(arguments);
+
                         getSupportFragmentManager().beginTransaction()
                                 .replace(R.id.rental_detail_container, fragment)
                                 .commit();
@@ -123,6 +125,7 @@ public class RentalListActivity extends AppCompatActivity {
             public final View mView;
             public final TextView mIdView;
             public final TextView mContentView;
+            public final ImageView mImageView;
             public DummyContent.DummyItem mItem;
 
             public ViewHolder(View view) {
@@ -130,6 +133,7 @@ public class RentalListActivity extends AppCompatActivity {
                 mView = view;
                 mIdView = (TextView) view.findViewById(R.id.id);
                 mContentView = (TextView) view.findViewById(R.id.content);
+                mImageView = (ImageView) view.findViewById(R.id.detail_image);
             }
 
             @Override

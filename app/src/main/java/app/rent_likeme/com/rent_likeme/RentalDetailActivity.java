@@ -1,13 +1,24 @@
 package app.rent_likeme.com.rent_likeme;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.graphics.Palette;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import app.rent_likeme.com.rent_likeme.dummy.DummyContent;
 
 /**
  * An activity representing a single Rental detail screen. This
@@ -39,6 +50,8 @@ public class RentalDetailActivity extends AppCompatActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
+        final CollapsingToolbarLayout collapsingToolbar = (CollapsingToolbarLayout) findViewById(R.id.toolbar_layout);
+
         // savedInstanceState is non-null when there is fragment state
         // saved from previous configurations of this activity
         // (e.g. when rotating the screen from portrait to landscape).
@@ -56,10 +69,45 @@ public class RentalDetailActivity extends AppCompatActivity {
                     getIntent().getStringExtra(RentalDetailFragment.ARG_ITEM_ID));
             RentalDetailFragment fragment = new RentalDetailFragment();
             fragment.setArguments(arguments);
+
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.rental_detail_container, fragment)
                     .commit();
         }
+
+        //clean up required
+        String id = getIntent().getStringExtra(RentalDetailFragment.ARG_ITEM_ID);
+        DummyContent.DummyItem mItem = DummyContent.ITEM_MAP.get(id);
+
+        InputStream inputStream = null;
+        try {
+            String imageName = mItem.image;
+            inputStream = getAssets().open(imageName);
+            Bitmap b = BitmapFactory.decodeStream(inputStream);
+
+            ImageView imageView = findViewById(R.id.detail_image);
+            imageView.setImageBitmap(b);
+
+            Palette.from(b).generate(new Palette.PaletteAsyncListener() {
+                @Override
+                public void onGenerated(@NonNull Palette palette) {
+                    int mutedColor = palette.getMutedColor(R.attr.colorPrimary);
+                    collapsingToolbar.setContentScrimColor(mutedColor);
+                }
+            });
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally{
+            if(inputStream != null){
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
     }
 
     @Override
