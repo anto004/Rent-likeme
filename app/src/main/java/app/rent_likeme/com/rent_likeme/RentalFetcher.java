@@ -11,6 +11,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import app.rent_likeme.com.rent_likeme.Utility.JSONHelper;
+
 import static app.rent_likeme.com.rent_likeme.RentalListActivity.LOG_TAG;
 
 /**
@@ -59,7 +61,7 @@ public class RentalFetcher {
                 reader = new BufferedReader(new InputStreamReader(inputStream));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    buffer.append(line).append("\n");
+                    buffer.append(line);
                 }
                 if (buffer.length() == 0) {
                     return null;
@@ -84,7 +86,10 @@ public class RentalFetcher {
             // &drop_off=2018-06-08&lang=EN&currency=USD"
             try {
                 String rentalJsonStr = getJsonString(getUrl());
-                Log.d(LOG_TAG, "rentalJsonStr:"+rentalJsonStr);
+                if(rentalJsonStr != null) {
+                    Log.d(LOG_TAG, "rentalJsonStr:" + rentalJsonStr);
+                    JSONHelper.parseJSONRental(rentalJsonStr);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
