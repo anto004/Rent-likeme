@@ -7,14 +7,20 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.PopupWindow;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -35,14 +41,15 @@ import app.rent_likeme.com.rent_likeme.dummy.DummyContent;
  * item details. On tablets, the activity presents the list of items and
  * item details side-by-side using two vertical panes.
  */
-public class RentalListActivity extends AppCompatActivity {
+public class RentalListActivity extends AppCompatActivity implements View.OnClickListener {
 
     public static final String LOG_TAG = RentalListActivity.class.getSimpleName();
-    private static final int FREQ_INTERVAL = 5000;
-    private static final int FAST_INTERVAL = 1000;
+    private static final int FREQ_INTERVAL = 5000; //5 secs
+    private static final int FAST_INTERVAL = 1000; //1 sec
     public static final int LOC_REQ_CODE = 200;
     private boolean mTwoPane;
     private GoogleApiClient mGoogleApiClient;
+    private PopupWindow mPopUpWindow;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,12 +60,34 @@ public class RentalListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setTitle(getTitle());
 
+        final FrameLayout rentalLayout = (FrameLayout) findViewById(R.id.rental_frame_layout);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+                View popUpView = inflater.inflate(R.layout.pop_up_window, null);
+                mPopUpWindow = new PopupWindow(popUpView, RecyclerView.LayoutParams.MATCH_PARENT,
+                        RecyclerView.LayoutParams.WRAP_CONTENT);
+
+                TextView distanceTv = popUpView.findViewById(R.id.distance_textview);
+                distanceTv.setOnClickListener(RentalListActivity.this);
+                ImageButton closeButton = popUpView.findViewById(R.id.close_pop_up_button);
+                closeButton.setOnClickListener(RentalListActivity.this);
+                mPopUpWindow.setTouchInterceptor(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View view, MotionEvent motionEvent) {
+                        if(motionEvent.getAction() == MotionEvent.ACTION_OUTSIDE){
+                            closePopUp();
+                            return true;
+                        }
+                        return false;
+                    }
+                });
+                mPopUpWindow.setOutsideTouchable(true);
+                mPopUpWindow.setAnimationStyle(R.style.pop_up_window_animation);
+                mPopUpWindow.showAtLocation(rentalLayout, Gravity.BOTTOM, 0, 0);
+
             }
         });
 
@@ -99,6 +128,22 @@ public class RentalListActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.rental_menu, menu);
         return super.onCreateOptionsMenu(menu);
+    }
+
+    private void closePopUp(){
+        mPopUpWindow.dismiss();
+    }
+
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()){
+            case R.id.distance_textview:
+                closePopUp();
+                break;
+            case R.id.close_pop_up_button:
+                closePopUp();
+                break;
+        }
     }
 
     @Override
@@ -179,6 +224,5 @@ public class RentalListActivity extends AppCompatActivity {
             }
         }
     }
-
 }
 
