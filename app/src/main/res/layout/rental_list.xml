@@ -1,13 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/rental_list"
-    android:name="app.rent_likeme.com.rent_likeme.RentalListFragment"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
     android:layout_marginLeft="16dp"
-    android:layout_marginRight="16dp"
-    app:layoutManager="LinearLayoutManager"
-    tools:context="app.rent_likeme.com.rent_likeme.RentalListActivity"
-    tools:listitem="@layout/rental_list_content" />
+    android:layout_marginRight="16dp">
+
+    <EditText
+        android:id="@+id/address_editText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="Address" />
+
+    <LinearLayout
+        android:id="@+id/date_linearlayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/address_editText"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/pick_up_textview"
+            style="@android:style/Widget.Material.Light.Spinner.Underlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp" />
+
+        <TextView
+            android:id="@+id/drop_off_textview"
+            style="@android:style/Widget.Material.Light.Spinner.Underlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp" />
+    </LinearLayout>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rental_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
+        android:layout_below="@id/date_linearlayout"
+        app:layoutManager="LinearLayoutManager"
+        tools:context="app.rent_likeme.com.rent_likeme.RentalListActivity"
+        tools:listitem="@layout/rental_list_content">
+
+    </android.support.v7.widget.RecyclerView>
+
+</RelativeLayout>
+

@@ -1,6 +1,9 @@
 package app.rent_likeme.com.rent_likeme;
 
 import android.Manifest;
+import android.app.DatePickerDialog;
+import android.app.Dialog;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -8,6 +11,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -17,6 +21,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.DatePicker;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.PopupWindow;
@@ -31,6 +36,10 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+import app.rent_likeme.com.rent_likeme.Utility.Utility;
 import app.rent_likeme.com.rent_likeme.dummy.DummyContent;
 
 /**
@@ -50,6 +59,12 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     private boolean mTwoPane;
     private GoogleApiClient mGoogleApiClient;
     private PopupWindow mPopUpWindow;
+    public static final String GLOBAL_PREFS = "rental_prefs";
+    public static final String ADDRESS_PREF = "address";
+    public static final String PICK_UP_DATE_PREF = "pick_up_date";
+    public static final String DROP_OFF_DATE_PREF = "drop_off_date";
+    public static final String DIALOG_TAG = "date_picker";
+    public static final String FRAG_VIEW_INFO = "frag_info";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,7 +93,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                     @Override
                     public boolean onTouch(View view, MotionEvent motionEvent) {
                         if(motionEvent.getAction() == MotionEvent.ACTION_OUTSIDE){
-                            closePopUp();
+                            closePopUpWindow();
                             return true;
                         }
                         return false;
@@ -93,6 +108,27 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
 
         checkPermissions();
         buildGoogleApiClient();
+
+        TextView pickUpTv = findViewById(R.id.pick_up_textview);
+        pickUpTv.setOnClickListener(this);
+        SharedPreferences sharedPreferences = getSharedPreferences(GLOBAL_PREFS, MODE_PRIVATE);
+        String pickUpDate = sharedPreferences.getString(PICK_UP_DATE_PREF, null);
+        if(pickUpDate != null){
+            pickUpTv.setText(pickUpDate);
+        }
+        else{
+            setCurrentDateOnView(pickUpTv.getId());
+        }
+
+        TextView dropOffTv = findViewById(R.id.drop_off_textview);
+        dropOffTv.setOnClickListener(this);
+        String dropOffDate = sharedPreferences.getString(DROP_OFF_DATE_PREF, null);
+        if(dropOffDate!= null){
+            dropOffTv.setText(dropOffDate);
+        }
+        else{
+            setCurrentDateOnView(dropOffTv.getId());
+        }
 
         View recyclerView = findViewById(R.id.rental_list);
         assert recyclerView != null;
@@ -130,18 +166,32 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         return super.onCreateOptionsMenu(menu);
     }
 
-    private void closePopUp(){
+    private void closePopUpWindow(){
         mPopUpWindow.dismiss();
+    }
+
+    private void callDatePickerFragment(int viewId){
+        Bundle bundle = new Bundle();
+        bundle.putInt(FRAG_VIEW_INFO, viewId);
+        DatePickerFragment datePickerFragment = new DatePickerFragment();
+        datePickerFragment.setArguments(bundle);
+        datePickerFragment.show(getSupportFragmentManager(), DIALOG_TAG);
     }
 
     @Override
     public void onClick(View view) {
         switch (view.getId()){
             case R.id.distance_textview:
-                closePopUp();
+                closePopUpWindow();
                 break;
             case R.id.close_pop_up_button:
-                closePopUp();
+                closePopUpWindow();
+                break;
+            case R.id.pick_up_textview:
+                callDatePickerFragment(R.id.pick_up_textview);
+                break;
+            case R.id.drop_off_textview:
+                callDatePickerFragment(R.id.drop_off_textview);
                 break;
         }
     }
@@ -150,6 +200,12 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     protected void onStop() {
         super.onStop();
         mGoogleApiClient.disconnect();
+    }
+
+    public void setCurrentDateOnView(int viewId) {
+        Calendar c = Calendar.getInstance();
+        TextView textView = (TextView) findViewById(viewId);
+        textView.setText(Utility.getDateFormat().format(c.getTime()));
     }
 
     public void getLocation() {
@@ -222,6 +278,36 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                     Toast.makeText(this, "Your location is required", Toast.LENGTH_SHORT).show();
                 }
             }
+        }
+    }
+
+    public static class DatePickerFragment extends DialogFragment
+            implements DatePickerDialog.OnDateSetListener {
+
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            // Use the current date as the default date in the picker
+            final Calendar c = Calendar.getInstance();
+            int year = c.get(Calendar.YEAR);
+            int month = c.get(Calendar.MONTH);
+            int day = c.get(Calendar.DAY_OF_MONTH);
+            return new DatePickerDialog(getActivity(), this, year, month, day);
+        }
+
+        public void onDateSet(DatePicker view, int year, int month, int day) {
+            int viewId = getArguments().getInt(RentalListActivity.FRAG_VIEW_INFO);
+            GregorianCalendar cal = new GregorianCalendar(year, month, day);
+            String formattedDate = Utility.getDateFormat().format(cal.getTime());
+
+            TextView textView = (TextView) getActivity().findViewById(viewId);
+            textView.setText(formattedDate);
+
+            SharedPreferences.Editor editor = getActivity()
+                    .getSharedPreferences(RentalListActivity.GLOBAL_PREFS, MODE_PRIVATE).edit();
+            editor.putString(viewId == R.id.pick_up_textview ? RentalListActivity.PICK_UP_DATE_PREF
+                            : RentalListActivity.DROP_OFF_DATE_PREF, formattedDate);
+            editor.apply();
         }
     }
 }
