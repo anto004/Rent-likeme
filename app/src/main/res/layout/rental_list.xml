@@ -2,25 +2,40 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rental_list_relativeLayout"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginLeft="16dp"
-    android:layout_marginRight="16dp">
+    android:layout_margin="16dp"
+    android:focusableInTouchMode="true">
 
     <EditText
         android:id="@+id/address_editText"
+        style="@android:style/Widget.Material.Light.EditText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:ems="10"
-        android:inputType="textPersonName"
-        android:text="Address" />
+        android:hint="Address"
+        android:inputType="textAutoComplete|textPostalAddress"
+        android:textColorHint="@android:color/darker_gray"
+        android:textColorLink="@color/common_google_signin_btn_text_dark_focused" />
+
+    <Button
+        android:id="@+id/search_button"
+        style="@style/RentalButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/address_editText"
+        android:stateListAnimator="@animator/button_anim"
+        android:text="Search" />
 
     <LinearLayout
         android:id="@+id/date_linearlayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/address_editText"
+        android:layout_marginBottom="16dp"
+        android:layout_marginTop="16dp"
         android:orientation="horizontal">
 
         <TextView
@@ -48,6 +63,7 @@
         android:layout_height="match_parent"
         android:layout_alignParentBottom="true"
         android:layout_below="@id/date_linearlayout"
+        android:focusableInTouchMode="true"
         app:layoutManager="LinearLayoutManager"
         tools:context="app.rent_likeme.com.rent_likeme.RentalListActivity"
         tools:listitem="@layout/rental_list_content">

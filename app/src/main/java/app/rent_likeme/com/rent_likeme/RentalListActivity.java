@@ -3,6 +3,7 @@ package app.rent_likeme.com.rent_likeme;
 import android.Manifest;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -21,10 +22,13 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.DatePicker;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.PopupWindow;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -75,7 +79,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         setSupportActionBar(toolbar);
         toolbar.setTitle(getTitle());
 
-        final FrameLayout rentalLayout = (FrameLayout) findViewById(R.id.rental_frame_layout);
+        final FrameLayout rentalFrameLayout = (FrameLayout) findViewById(R.id.rental_frame_layout);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -101,13 +105,34 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 });
                 mPopUpWindow.setOutsideTouchable(true);
                 mPopUpWindow.setAnimationStyle(R.style.pop_up_window_animation);
-                mPopUpWindow.showAtLocation(rentalLayout, Gravity.BOTTOM, 0, 0);
+                mPopUpWindow.showAtLocation(rentalFrameLayout, Gravity.BOTTOM, 0, 0);
 
             }
         });
 
         checkPermissions();
         buildGoogleApiClient();
+
+        final EditText addressTv = findViewById(R.id.address_editText);
+        addressTv.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean hasFocus) {
+                if(hasFocus){
+                    Toast.makeText(RentalListActivity.this, "In Focus", Toast.LENGTH_SHORT).show();
+                }
+                if(!hasFocus){
+                    Toast.makeText(RentalListActivity.this, "Out Focus", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        RelativeLayout rentalRelLayout = findViewById(R.id.rental_list_relativeLayout);
+        rentalRelLayout.setOnClickListener(new RelativeLayout.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                addressTv.clearFocus();
+                hideKeyboard();
+            }
+        });
 
         TextView pickUpTv = findViewById(R.id.pick_up_textview);
         pickUpTv.setOnClickListener(this);
@@ -149,6 +174,15 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         recyclerView.setAdapter(new RentalAdapter(this, mTwoPane, DummyContent.ITEMS));
     }
 
+    private void hideKeyboard(){
+        InputMethodManager inputMethodManager = (InputMethodManager)
+                this.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if(inputMethodManager != null && this.getCurrentFocus() != null) {
+            Log.v(LOG_TAG, "requesting to hide keyboard");
+            inputMethodManager.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(), 2);
+        }
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -170,6 +204,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         mPopUpWindow.dismiss();
     }
 
+    //Either for pickup or dropoff
     private void callDatePickerFragment(int viewId){
         Bundle bundle = new Bundle();
         bundle.putInt(FRAG_VIEW_INFO, viewId);
@@ -224,7 +259,6 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         FusedLocationProviderClient fusedLocationProviderClient =
                 LocationServices.getFusedLocationProviderClient(this);
 
-
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -238,7 +272,6 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 }
             });
         }
-
     }
 
     protected synchronized void buildGoogleApiClient() {
