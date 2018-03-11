@@ -4,10 +4,14 @@ import android.Manifest;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Address;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.ResultReceiver;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -23,11 +27,13 @@ import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.PopupWindow;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,8 +49,9 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import app.rent_likeme.com.rent_likeme.Utility.Utility;
 import app.rent_likeme.com.rent_likeme.dummy.DummyContent;
+import app.rent_likeme.com.rent_likeme.map.GeocoderAddressService;
+import app.rent_likeme.com.rent_likeme.util.Utility;
 
 /**
  * An activity representing a list of Rentals. This activity
@@ -60,15 +67,17 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     private static final int FREQ_INTERVAL = 5000; //5 secs
     private static final int FAST_INTERVAL = 1000; //1 sec
     public static final int LOC_REQ_CODE = 200;
-    private boolean mTwoPane;
-    private GoogleApiClient mGoogleApiClient;
-    private PopupWindow mPopUpWindow;
     public static final String GLOBAL_PREFS = "rental_prefs";
     public static final String ADDRESS_PREF = "address";
     public static final String PICK_UP_DATE_PREF = "pick_up_date";
     public static final String DROP_OFF_DATE_PREF = "drop_off_date";
     public static final String DIALOG_TAG = "date_picker";
     public static final String FRAG_VIEW_INFO = "frag_info";
+    private boolean mTwoPane;
+    private GoogleApiClient mGoogleApiClient;
+    private PopupWindow mPopUpWindow;
+    private ProgressBar mProgressBar;
+    private EditText mAddressTv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,26 +122,20 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         checkPermissions();
         buildGoogleApiClient();
 
-        final EditText addressTv = findViewById(R.id.address_editText);
-        addressTv.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean hasFocus) {
-                if(hasFocus){
-                    Toast.makeText(RentalListActivity.this, "In Focus", Toast.LENGTH_SHORT).show();
-                }
-                if(!hasFocus){
-                    Toast.makeText(RentalListActivity.this, "Out Focus", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+        mAddressTv = findViewById(R.id.address_editText);
+        //Clear editText focus when click anywhere else on the screen
         RelativeLayout rentalRelLayout = findViewById(R.id.rental_list_relativeLayout);
         rentalRelLayout.setOnClickListener(new RelativeLayout.OnClickListener() {
             @Override
             public void onClick(View view) {
-                addressTv.clearFocus();
+                mAddressTv.clearFocus();
                 hideKeyboard();
             }
         });
+
+        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+        Button searchButton = (Button) findViewById(R.id.rental_search_button);
+        searchButton.setOnClickListener(this);
 
         TextView pickUpTv = findViewById(R.id.pick_up_textview);
         pickUpTv.setOnClickListener(this);
@@ -178,7 +181,6 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         InputMethodManager inputMethodManager = (InputMethodManager)
                 this.getSystemService(Context.INPUT_METHOD_SERVICE);
         if(inputMethodManager != null && this.getCurrentFocus() != null) {
-            Log.v(LOG_TAG, "requesting to hide keyboard");
             inputMethodManager.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(), 2);
         }
     }
@@ -192,6 +194,9 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     @Override
     protected void onResume() {
         super.onResume();
+        Log.v(LOG_TAG, "onResume Called");
+        RentalFetcher.FetchRentalsTask fetchData = new RentalFetcher.FetchRentalsTask();
+        fetchData.execute();
     }
 
     @Override
@@ -221,12 +226,18 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 break;
             case R.id.close_pop_up_button:
                 closePopUpWindow();
+                onResume();
                 break;
             case R.id.pick_up_textview:
                 callDatePickerFragment(R.id.pick_up_textview);
                 break;
             case R.id.drop_off_textview:
                 callDatePickerFragment(R.id.drop_off_textview);
+                break;
+            case R.id.rental_search_button:
+                startIntentToFetchLatLong();
+                mAddressTv.clearFocus();
+                hideKeyboard();
                 break;
         }
     }
@@ -235,6 +246,20 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     protected void onStop() {
         super.onStop();
         mGoogleApiClient.disconnect();
+    }
+
+    public void startIntentToFetchLatLong(){
+        Intent intent = new Intent(this, GeocoderAddressService.class);
+        AddressResultReceiver resultReceiver = new AddressResultReceiver(null);
+        intent.putExtra(GeocoderAddressService.RETURN_RECEIVER_KEY, resultReceiver);
+        String address = mAddressTv.getText().toString();
+        if(address.trim().length() == 0){
+            Toast.makeText(this, "Address?", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        intent.putExtra(GeocoderAddressService.LOCATION_NAME_KEY, address);
+        mProgressBar.setVisibility(View.VISIBLE);
+        startService(intent);
     }
 
     public void setCurrentDateOnView(int viewId) {
@@ -308,7 +333,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         switch (requestCode) {
             case LOC_REQ_CODE: {
                 if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "Your location is required", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Give Access to Location for Navigation", Toast.LENGTH_SHORT).show();
                 }
             }
         }
@@ -341,6 +366,37 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
             editor.putString(viewId == R.id.pick_up_textview ? RentalListActivity.PICK_UP_DATE_PREF
                             : RentalListActivity.DROP_OFF_DATE_PREF, formattedDate);
             editor.apply();
+        }
+    }
+
+    class AddressResultReceiver extends ResultReceiver {
+
+        public AddressResultReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            if(resultCode == GeocoderAddressService.SUCCESS_RESULT){
+                final Address address = resultData.getParcelable(GeocoderAddressService.RESULT_ADDRESS_KEY);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mProgressBar.setVisibility(View.GONE);
+                        Log.v(LOG_TAG, "Receive latitude and longitude: " + address.getLatitude()
+                                    +address.getLongitude() + address.getCountryName());
+                    }
+                });
+            }
+            if(resultCode == GeocoderAddressService.FAILURE_RESULT){
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mProgressBar.setVisibility(View.GONE);
+                        Toast.makeText(RentalListActivity.this, "Invalid Address!", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
         }
     }
 }

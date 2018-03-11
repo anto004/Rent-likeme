@@ -1,4 +1,4 @@
-package app.rent_likeme.com.rent_likeme.Utility;
+package app.rent_likeme.com.rent_likeme.util;
 
 import android.util.Log;
 

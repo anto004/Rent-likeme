@@ -11,7 +11,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import app.rent_likeme.com.rent_likeme.Utility.JSONHelper;
+import app.rent_likeme.com.rent_likeme.util.JSONHelper;
 
 import static app.rent_likeme.com.rent_likeme.RentalListActivity.LOG_TAG;
 

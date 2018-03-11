@@ -1,4 +1,4 @@
-package app.rent_likeme.com.rent_likeme.Utility;
+package app.rent_likeme.com.rent_likeme.util;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -11,4 +11,5 @@ public class Utility {
     public static SimpleDateFormat getDateFormat(){
         return new SimpleDateFormat("EEE, MMM d, ''yy", Locale.US);
     }
+
 }

@@ -31,6 +31,8 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="app.rent_likeme.com.rent_likeme.RentalListActivity" />
         </activity>
+
+        <service android:name=".map.GeocoderAddressService" />
     </application>
 
 </manifest>

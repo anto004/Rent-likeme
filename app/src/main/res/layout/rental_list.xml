@@ -21,7 +21,7 @@
         android:textColorLink="@color/common_google_signin_btn_text_dark_focused" />
 
     <Button
-        android:id="@+id/search_button"
+        android:id="@+id/rental_search_button"
         style="@style/RentalButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -29,11 +29,19 @@
         android:stateListAnimator="@animator/button_anim"
         android:text="Search" />
 
+
+    <RadioButton
+        android:id="@+id/current_loc_radio_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/address_editText"
+        android:text="Current Location" />
+
     <LinearLayout
         android:id="@+id/date_linearlayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/address_editText"
+        android:layout_below="@id/current_loc_radio_button"
         android:layout_marginBottom="16dp"
         android:layout_marginTop="16dp"
         android:orientation="horizontal">
@@ -70,5 +78,13 @@
 
     </android.support.v7.widget.RecyclerView>
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="@style/Widget.AppCompat.ProgressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerInParent="true"
+        android:visibility="invisible" />
 </RelativeLayout>
 
