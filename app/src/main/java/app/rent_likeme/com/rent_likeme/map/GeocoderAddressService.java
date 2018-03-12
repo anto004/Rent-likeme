@@ -24,15 +24,15 @@ public class GeocoderAddressService extends IntentService {
     public static final String LOG_TAG = GeocoderAddressService.class.getSimpleName();
     public static final int SUCCESS_RESULT = 0;
     public static final int FAILURE_RESULT = 1;
-    private static final int ADDRESS_INPUT_NAME_KEY = 10;
-    private static final int ADDRESS_INPUT_LOCATION_KEY = 11 ;
+    public static final int ADDRESS_INPUT_NAME_KEY = 10;
+    public static final int ADDRESS_INPUT_LOCATION_KEY = 11 ;
     public static final String RETURN_RECEIVER_KEY = "return_receiver";
     public static final String RESULT_DATA_KEY = "result_data";
     public static final String RESULT_ADDRESS_KEY = "result_address";
-    public static final String LOCATION_NAME_KEY = "location_name";
-    private static final String FETCH_TYPE_KEY = "fetch_type";
-    private static final String LOCATION_LATITUDE_KEY = "location_latitude";
-    private static final String LOCATION_LONGITUDE_KEY = "location_longitude";
+    public static final String ADDRESS_NAME_KEY = "address_name";
+    public static final String INPUT_TYPE_KEY = "input_type";
+    public static final String LOCATION_LATITUDE_KEY = "location_latitude";
+    public static final String LOCATION_LONGITUDE_KEY = "location_longitude";
     public ResultReceiver mResultReceiver;
 
     public GeocoderAddressService() {
@@ -45,9 +45,9 @@ public class GeocoderAddressService extends IntentService {
         String errorMessage = "";
         List<Address> addressResult = null;
 
-        int fetchType = intent.getIntExtra(FETCH_TYPE_KEY, 0);
-        if(fetchType == ADDRESS_INPUT_NAME_KEY) {
-            String name = intent.getStringExtra(LOCATION_NAME_KEY);
+        int inputType = intent.getIntExtra(INPUT_TYPE_KEY, 0);
+        if(inputType == ADDRESS_INPUT_NAME_KEY) {
+            String name = intent.getStringExtra(ADDRESS_NAME_KEY);
 
             try {
                 addressResult = geocoder.getFromLocationName(name, 1);
@@ -56,13 +56,12 @@ public class GeocoderAddressService extends IntentService {
                 e.printStackTrace();
             }
         }
-        else if(fetchType == ADDRESS_INPUT_LOCATION_KEY) {
+        else if(inputType == ADDRESS_INPUT_LOCATION_KEY) {
             double latitude = intent.getDoubleExtra(LOCATION_LATITUDE_KEY, 0);
             double longitude = intent.getDoubleExtra(LOCATION_LONGITUDE_KEY, 0);
 
             try {
                 addressResult = geocoder.getFromLocation(latitude, longitude, 1);
-
             } catch (IOException e) {
                 e.printStackTrace();
             }

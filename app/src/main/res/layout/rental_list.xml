@@ -18,7 +18,7 @@
         android:hint="Address"
         android:inputType="textAutoComplete|textPostalAddress"
         android:textColorHint="@android:color/darker_gray"
-        android:textColorLink="@color/common_google_signin_btn_text_dark_focused" />
+        android:textColorLink="@color/common_google_signin_btn_text_dark_focused"/>
 
     <Button
         android:id="@+id/rental_search_button"

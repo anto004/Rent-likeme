@@ -34,6 +34,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -68,16 +69,18 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     private static final int FAST_INTERVAL = 1000; //1 sec
     public static final int LOC_REQ_CODE = 200;
     public static final String GLOBAL_PREFS = "rental_prefs";
-    public static final String ADDRESS_PREF = "address";
+    public static final String ADDRESS_PREF = "address_prefs";
     public static final String PICK_UP_DATE_PREF = "pick_up_date";
     public static final String DROP_OFF_DATE_PREF = "drop_off_date";
     public static final String DIALOG_TAG = "date_picker";
     public static final String FRAG_VIEW_INFO = "frag_info";
     private boolean mTwoPane;
     private GoogleApiClient mGoogleApiClient;
+    private Location mLocation;
     private PopupWindow mPopUpWindow;
     private ProgressBar mProgressBar;
     private EditText mAddressTv;
+    private RadioButton mCurrentLocButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,23 +125,31 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         checkPermissions();
         buildGoogleApiClient();
 
+        mCurrentLocButton = (RadioButton) findViewById(R.id.current_loc_radio_button);
+        mCurrentLocButton.setOnClickListener(this);
         mAddressTv = findViewById(R.id.address_editText);
+        //click listener won't respond to single click
+        mAddressTv.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if(mCurrentLocButton.isChecked()) {
+                    mCurrentLocButton.setChecked(false);
+                    return true;
+                }
+                return false;
+            }
+
+        });
         //Clear editText focus when click anywhere else on the screen
         RelativeLayout rentalRelLayout = findViewById(R.id.rental_list_relativeLayout);
-        rentalRelLayout.setOnClickListener(new RelativeLayout.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mAddressTv.clearFocus();
-                hideKeyboard();
-            }
-        });
+        rentalRelLayout.setOnClickListener(this);
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
         Button searchButton = (Button) findViewById(R.id.rental_search_button);
         searchButton.setOnClickListener(this);
-
         TextView pickUpTv = findViewById(R.id.pick_up_textview);
         pickUpTv.setOnClickListener(this);
+
         SharedPreferences sharedPreferences = getSharedPreferences(GLOBAL_PREFS, MODE_PRIVATE);
         String pickUpDate = sharedPreferences.getString(PICK_UP_DATE_PREF, null);
         if(pickUpDate != null){
@@ -205,6 +216,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         return super.onCreateOptionsMenu(menu);
     }
 
+
     private void closePopUpWindow(){
         mPopUpWindow.dismiss();
     }
@@ -221,6 +233,19 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     @Override
     public void onClick(View view) {
         switch (view.getId()){
+            case R.id.address_editText:
+                break;
+            case R.id.current_loc_radio_button:
+                if(mCurrentLocButton.isChecked()){
+                    if(mLocation == null){
+                        getLocation();
+                        mCurrentLocButton.setChecked(false);
+                        return;
+                    }
+                    mAddressTv.clearFocus();
+                    mAddressTv.getText().clear();
+                }
+                break;
             case R.id.distance_textview:
                 closePopUpWindow();
                 break;
@@ -239,6 +264,10 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 mAddressTv.clearFocus();
                 hideKeyboard();
                 break;
+            case R.id.rental_list_relativeLayout:
+                mAddressTv.clearFocus();
+                hideKeyboard();
+                break;
         }
     }
 
@@ -248,16 +277,37 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         mGoogleApiClient.disconnect();
     }
 
-    public void startIntentToFetchLatLong(){
-        Intent intent = new Intent(this, GeocoderAddressService.class);
-        AddressResultReceiver resultReceiver = new AddressResultReceiver(null);
-        intent.putExtra(GeocoderAddressService.RETURN_RECEIVER_KEY, resultReceiver);
+    public Integer getInputTypeToFetchLatLong(){
+        if(mCurrentLocButton.isChecked()){
+            return GeocoderAddressService.ADDRESS_INPUT_LOCATION_KEY;
+        }
         String address = mAddressTv.getText().toString();
         if(address.trim().length() == 0){
             Toast.makeText(this, "Address?", Toast.LENGTH_SHORT).show();
+            return null;
+        }
+        return GeocoderAddressService.ADDRESS_INPUT_NAME_KEY;
+    }
+    public void startIntentToFetchLatLong(){
+        Integer inputType = getInputTypeToFetchLatLong();
+        if(inputType == null){
             return;
         }
-        intent.putExtra(GeocoderAddressService.LOCATION_NAME_KEY, address);
+        Intent intent = new Intent(this, GeocoderAddressService.class);
+        AddressResultReceiver resultReceiver = new AddressResultReceiver(null);
+        intent.putExtra(GeocoderAddressService.RETURN_RECEIVER_KEY, resultReceiver);
+        //using Radio button current location
+        if(inputType == GeocoderAddressService.ADDRESS_INPUT_LOCATION_KEY){
+            intent.putExtra(GeocoderAddressService.INPUT_TYPE_KEY, GeocoderAddressService.ADDRESS_INPUT_LOCATION_KEY);
+            intent.putExtra(GeocoderAddressService.LOCATION_LATITUDE_KEY, mLocation.getLatitude());
+            intent.putExtra(GeocoderAddressService.LOCATION_LONGITUDE_KEY, mLocation.getLongitude());
+        }
+        //using typed address
+        if(inputType == GeocoderAddressService.ADDRESS_INPUT_NAME_KEY) {
+            intent.putExtra(GeocoderAddressService.INPUT_TYPE_KEY, GeocoderAddressService.ADDRESS_INPUT_NAME_KEY);
+            String address = mAddressTv.getText().toString();
+            intent.putExtra(GeocoderAddressService.ADDRESS_NAME_KEY, address);
+        }
         mProgressBar.setVisibility(View.VISIBLE);
         startService(intent);
     }
@@ -266,6 +316,29 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         Calendar c = Calendar.getInstance();
         TextView textView = (TextView) findViewById(viewId);
         textView.setText(Utility.getDateFormat().format(c.getTime()));
+    }
+
+    private void checkPermissions(){
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION}, LOC_REQ_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case LOC_REQ_CODE: {
+                if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Required Access to your Current Location", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
     }
 
     public void getLocation() {
@@ -293,9 +366,13 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                     new OnSuccessListener<Location>() {
                 @Override
                 public void onSuccess(Location location) {
-                    Log.v(LOG_TAG, "Got location: " + location.toString());
+                    mLocation = location;
+                    Log.v(LOG_TAG, "Got location: " + mLocation.toString());
                 }
             });
+        }
+        else{
+            checkPermissions();
         }
     }
 
@@ -314,29 +391,6 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                     }
                 })
                 .build();
-    }
-
-    private void checkPermissions(){
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION}, LOC_REQ_CODE);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case LOC_REQ_CODE: {
-                if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "Give Access to Location for Navigation", Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
     }
 
     public static class DatePickerFragment extends DialogFragment
@@ -384,7 +438,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                     public void run() {
                         mProgressBar.setVisibility(View.GONE);
                         Log.v(LOG_TAG, "Receive latitude and longitude: " + address.getLatitude()
-                                    +address.getLongitude() + address.getCountryName());
+                                    +address.getLongitude() +" "+ address.getCountryName());
                     }
                 });
             }
