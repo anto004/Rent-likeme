@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ResultReceiver;
@@ -48,11 +49,17 @@ import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
-import app.rent_likeme.com.rent_likeme.dummy.DummyContent;
+import app.rent_likeme.com.rent_likeme.dummy.DummyRentalContent;
 import app.rent_likeme.com.rent_likeme.map.GeocoderAddressService;
+import app.rent_likeme.com.rent_likeme.model.Result;
 import app.rent_likeme.com.rent_likeme.util.Utility;
+import app.rent_likeme.com.rent_likeme.util.JSONHelper.Results;
+
 
 /**
  * An activity representing a list of Rentals. This activity
@@ -75,8 +82,11 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     public static final String DIALOG_TAG = "date_picker";
     public static final String FRAG_VIEW_INFO = "frag_info";
     private boolean mTwoPane;
+    private RecyclerView mRecyclerView;
     private GoogleApiClient mGoogleApiClient;
     private Location mLocation;
+    private Double mLatitude;
+    private Double mLongitude;
     private PopupWindow mPopUpWindow;
     private ProgressBar mProgressBar;
     private EditText mAddressTv;
@@ -101,7 +111,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 mPopUpWindow = new PopupWindow(popUpView, RecyclerView.LayoutParams.MATCH_PARENT,
                         RecyclerView.LayoutParams.WRAP_CONTENT);
 
-                TextView distanceTv = popUpView.findViewById(R.id.distance_textview);
+                TextView distanceTv = popUpView.findViewById(R.id.pop_up_distance_textview);
                 distanceTv.setOnClickListener(RentalListActivity.this);
                 ImageButton closeButton = popUpView.findViewById(R.id.close_pop_up_button);
                 closeButton.setOnClickListener(RentalListActivity.this);
@@ -169,9 +179,9 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
             setCurrentDateOnView(dropOffTv.getId());
         }
 
-        View recyclerView = findViewById(R.id.rental_list);
-        assert recyclerView != null;
-        setupRecyclerView((RecyclerView) recyclerView);
+        mRecyclerView = findViewById(R.id.rental_list);
+        assert mRecyclerView != null;
+        setupRecyclerView((RecyclerView) mRecyclerView);
 
         if (findViewById(R.id.rental_detail_container) != null) {
             // The detail container view will be present only in the
@@ -180,12 +190,11 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
             // activity should be in two-pane mode.
             mTwoPane = true;
         }
-        RentalFetcher.FetchRentalsTask fetchData = new RentalFetcher.FetchRentalsTask();
-        fetchData.execute();
+
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new RentalAdapter(this, mTwoPane, DummyContent.ITEMS));
+        recyclerView.setAdapter(new RentalAdapter(this, mTwoPane, DummyRentalContent.items));
     }
 
     private void hideKeyboard(){
@@ -206,8 +215,6 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     protected void onResume() {
         super.onResume();
         Log.v(LOG_TAG, "onResume Called");
-        RentalFetcher.FetchRentalsTask fetchData = new RentalFetcher.FetchRentalsTask();
-        fetchData.execute();
     }
 
     @Override
@@ -246,7 +253,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                     mAddressTv.getText().clear();
                 }
                 break;
-            case R.id.distance_textview:
+            case R.id.pop_up_distance_textview:
                 closePopUpWindow();
                 break;
             case R.id.close_pop_up_button:
@@ -261,6 +268,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 break;
             case R.id.rental_search_button:
                 startIntentToFetchLatLong();
+                mProgressBar.setVisibility(View.VISIBLE);
                 mAddressTv.clearFocus();
                 hideKeyboard();
                 break;
@@ -416,9 +424,9 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
             textView.setText(formattedDate);
 
             SharedPreferences.Editor editor = getActivity()
-                    .getSharedPreferences(RentalListActivity.GLOBAL_PREFS, MODE_PRIVATE).edit();
-            editor.putString(viewId == R.id.pick_up_textview ? RentalListActivity.PICK_UP_DATE_PREF
-                            : RentalListActivity.DROP_OFF_DATE_PREF, formattedDate);
+                    .getSharedPreferences(GLOBAL_PREFS, MODE_PRIVATE).edit();
+            editor.putString(viewId == R.id.pick_up_textview ? PICK_UP_DATE_PREF
+                            : DROP_OFF_DATE_PREF, formattedDate);
             editor.apply();
         }
     }
@@ -436,9 +444,30 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mProgressBar.setVisibility(View.GONE);
                         Log.v(LOG_TAG, "Receive latitude and longitude: " + address.getLatitude()
                                     +address.getLongitude() +" "+ address.getCountryName());
+                        mLatitude = address.getLatitude();
+                        mLongitude = address.getLongitude();
+
+                        Calendar cal = Calendar.getInstance();
+                        String currentDate = Utility.getCurrentDateFormat().format(cal.getTime());
+
+                        SharedPreferences prefs = getSharedPreferences(GLOBAL_PREFS, MODE_PRIVATE);
+                        String pickUpDate = prefs.getString(PICK_UP_DATE_PREF, currentDate);
+                        String dropOffDate = prefs.getString(DROP_OFF_DATE_PREF, currentDate);
+
+                        if(address.hasLatitude() && address.hasLongitude()) {
+                            RentalFetcher.FetchRentalsTask fetchData = new RentalFetcher.FetchRentalsTask(
+                                    pickUpDate, dropOffDate);
+                            AsyncTask<Address, Void, Results> results = fetchData.execute(address);
+                            try {
+                                mProgressBar.setVisibility(View.GONE);
+                                displayDummyValues(results.get());
+
+                            } catch (InterruptedException | ExecutionException e) {
+                                e.printStackTrace();
+                            }
+                        }
                     }
                 });
             }
@@ -448,10 +477,24 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                     public void run() {
                         mProgressBar.setVisibility(View.GONE);
                         Toast.makeText(RentalListActivity.this, "Invalid Address!", Toast.LENGTH_SHORT).show();
+
                     }
                 });
             }
         }
+    }
+
+    private void displayDummyValues(Results results){
+        List<Result> resultList = results.getResults();
+        for(Result result: resultList){
+            if(mLatitude != null && mLongitude != null) {
+                result.latitude = mLatitude;
+                result.longitude = mLongitude;
+            }
+        }
+        //Sort by distance using provided location as reference
+        Collections.sort(resultList);
+        mRecyclerView.swapAdapter(new RentalAdapter(this, mTwoPane, resultList), false);
     }
 }
 

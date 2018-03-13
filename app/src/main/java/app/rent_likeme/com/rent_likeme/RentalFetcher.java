@@ -1,5 +1,6 @@
 package app.rent_likeme.com.rent_likeme;
 
+import android.location.Address;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -12,6 +13,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import app.rent_likeme.com.rent_likeme.util.JSONHelper;
+import app.rent_likeme.com.rent_likeme.util.JSONHelper.Results;
 
 import static app.rent_likeme.com.rent_likeme.RentalListActivity.LOG_TAG;
 
@@ -21,9 +23,48 @@ import static app.rent_likeme.com.rent_likeme.RentalListActivity.LOG_TAG;
 
 public class RentalFetcher {
 
-    static class FetchRentalsTask extends AsyncTask<Void, Void, Void> {
+    static class FetchRentalsTask extends AsyncTask<Address, Void, Results> {
+        private String pickUpDate;
+        private String dropOffDate;
+        public FetchRentalsTask(String pickUpDate, String dropOffDate){
+            this.pickUpDate = pickUpDate;
+            this.dropOffDate = dropOffDate;
+        }
 
-        private URL getUrl() throws IOException {
+        @Override
+        protected Results doInBackground(Address... addresses) {
+            //"https://api.sandbox.amadeus.com/v1.2/cars/search-circle?
+            // apikey=8ziGGBD5UYagqCGpPGKAk0tCg7BHpnhg
+            // &latitude=35.1504
+            // &longitude=-114.57632
+            // &radius=42
+            // &pick_up=2018-06-07
+            // &drop_off=2018-06-08&lang=EN&currency=USD"
+            try {
+                Address address = addresses[0];
+                double latitude = address.getLatitude();
+                double longitude = address.getLongitude();
+
+                String rentalJsonStr = getJsonString(getUrl(latitude, longitude));
+
+                if(rentalJsonStr != null) {
+                    Log.d(LOG_TAG, "rentalJsonStr:" + rentalJsonStr);
+                    JSONHelper.Results results = JSONHelper.parseJSONRental(rentalJsonStr);
+                    return results;
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Results results) {
+            super.onPostExecute(results);
+        }
+
+        private URL getUrl(double latitude, double longitude) throws IOException {
             final String RENTAL_BASE_URL =
                     "https://api.sandbox.amadeus.com/v1.2/cars/search-circle?";
             final String APPID_PARAM = "apikey";
@@ -32,14 +73,14 @@ public class RentalFetcher {
             final String RADIUS_PARAM = "radius";
             final String PICK_UP_PARAM = "pick_up";
             final String DROP_OFF_PARAM = "drop_off";
-
+            final String RADIUS = "20";
             Uri builtUri = Uri.parse(RENTAL_BASE_URL).buildUpon()
                     .appendQueryParameter(APPID_PARAM, BuildConfig.RENTAL_API_KEY)
-                    .appendQueryParameter(LAT_PARAM, "35.15")
-                    .appendQueryParameter(LONG_PARAM, "-114.57")
-                    .appendQueryParameter(RADIUS_PARAM, "20")
-                    .appendQueryParameter(PICK_UP_PARAM, "2018-06-07")
-                    .appendQueryParameter(DROP_OFF_PARAM, "2018-06-08")
+                    .appendQueryParameter(LAT_PARAM, String.valueOf(latitude))
+                    .appendQueryParameter(LONG_PARAM, String.valueOf(longitude))
+                    .appendQueryParameter(RADIUS_PARAM, RADIUS)
+                    .appendQueryParameter(PICK_UP_PARAM, pickUpDate)
+                    .appendQueryParameter(DROP_OFF_PARAM, dropOffDate)
                     .build();
             return new URL(builtUri.toString());
         }
@@ -73,27 +114,6 @@ public class RentalFetcher {
                     urlConnection.disconnect();
                 }
             }
-        }
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            //"https://api.sandbox.amadeus.com/v1.2/cars/search-circle?
-            // apikey=8ziGGBD5UYagqCGpPGKAk0tCg7BHpnhg
-            // &latitude=35.1504
-            // &longitude=-114.57632
-            // &radius=42
-            // &pick_up=2018-06-07
-            // &drop_off=2018-06-08&lang=EN&currency=USD"
-            try {
-                String rentalJsonStr = getJsonString(getUrl());
-                if(rentalJsonStr != null) {
-                    Log.d(LOG_TAG, "rentalJsonStr:" + rentalJsonStr);
-                    JSONHelper.parseJSONRental(rentalJsonStr);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
         }
     }
 }

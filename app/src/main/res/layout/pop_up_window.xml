@@ -31,7 +31,7 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/distance_textview"
+        android:id="@+id/pop_up_distance_textview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
@@ -42,20 +42,20 @@
         android:textSize="20sp" />
 
     <TextView
-        android:id="@+id/company_textview"
+        android:id="@+id/pop_up_company_textview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/distance_textview"
+        android:layout_below="@id/pop_up_distance_textview"
         android:paddingBottom="15dp"
         android:text="Company"
         android:textColor="@android:color/black"
         android:textSize="20sp" />
 
     <TextView
-        android:id="@+id/price_textview"
+        android:id="@+id/pop_up_price_textview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/company_textview"
+        android:layout_below="@id/pop_up_company_textview"
         android:paddingBottom="15dp"
         android:text="Price"
         android:textColor="@android:color/black"

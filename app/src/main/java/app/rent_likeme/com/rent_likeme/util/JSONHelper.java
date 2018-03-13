@@ -14,17 +14,26 @@ import app.rent_likeme.com.rent_likeme.model.Result;
 
 public class JSONHelper {
     private static final String LOG_TAG = JSONHelper.class.getSimpleName();
-    public static void parseJSONRental(String rentalJsonStr){
+    public static Results parseJSONRental(String rentalJsonStr){
         Gson gson = new Gson();
         Results results = gson.fromJson(rentalJsonStr, Results.class);
 
         if(results != null){
             Log.v(LOG_TAG, "Car found " + results.toString());
         }
+        return results;
     }
 
-    class Results{
+    public class Results{
         List<Result> results;
+
+        public List<Result> getResults() {
+            return results;
+        }
+
+        public void setResults(List<Result> results) {
+            this.results = results;
+        }
 
         @Override
         public String toString() {

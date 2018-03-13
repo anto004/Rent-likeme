@@ -15,7 +15,7 @@ import android.widget.TextView;
 
 import java.util.List;
 
-import app.rent_likeme.com.rent_likeme.dummy.DummyContent;
+import app.rent_likeme.com.rent_likeme.model.Result;
 
 /**
  * Created by anto004 on 3/3/18.
@@ -24,13 +24,13 @@ import app.rent_likeme.com.rent_likeme.dummy.DummyContent;
 public class RentalAdapter
         extends RecyclerView.Adapter<RentalAdapter.ViewHolder> {
 
-    private final List<DummyContent.DummyItem> mValues;
+    private final List<Result> mResults;
     private Context mContext;
     private boolean mTwoPane;
 
-    public RentalAdapter(Context context, Boolean twoPane, List<DummyContent.DummyItem> items) {
+    public RentalAdapter(Context context, Boolean twoPane, List<Result> items) {
         this.mContext = context;
-        this.mValues = items;
+        this.mResults = items;
         this.mTwoPane = twoPane;
     }
 
@@ -44,9 +44,9 @@ public class RentalAdapter
 
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
-        holder.mItem = mValues.get(position);
-        holder.mIdView.setText(mValues.get(position).id);
-        holder.mContentView.setText(mValues.get(position).content);
+        holder.mResult = mResults.get(position);
+        holder.mCompanyNameTextView.setText(holder.mResult.provider.companyName);
+        holder.mDistanceTextView.setText(String.valueOf(holder.mResult.distance()));
 
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -54,7 +54,7 @@ public class RentalAdapter
 
                 if (mTwoPane) {
                     Bundle arguments = new Bundle();
-                    arguments.putString(RentalDetailFragment.ARG_ITEM_ID, holder.mItem.id);
+//                    arguments.putString(RentalDetailFragment.ARG_ITEM_ID, holder.mResult.id);
                     RentalDetailFragment fragment = new RentalDetailFragment();
                     fragment.setArguments(arguments);
 
@@ -64,7 +64,7 @@ public class RentalAdapter
                             .commit();
                 } else {
                     Intent intent = new Intent(mContext, RentalDetailActivity.class);
-                    intent.putExtra(RentalDetailFragment.ARG_ITEM_ID, holder.mItem.id);
+//                    intent.putExtra(RentalDetailFragment.ARG_ITEM_ID, holder.mResult.id);
                     mContext.startActivity(intent);
                     Activity activity = (Activity) mContext;
                     activity.overridePendingTransition(R.anim.come_in_from_right, R.anim.go_out_left);
@@ -75,27 +75,27 @@ public class RentalAdapter
 
     @Override
     public int getItemCount() {
-        return mValues.size();
+        return mResults.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         public final View mView;
-        public final TextView mIdView;
-        public final TextView mContentView;
+        public final TextView mCompanyNameTextView;
+        public final TextView mDistanceTextView;
         public final ImageView mImageView;
-        public DummyContent.DummyItem mItem;
+        public Result mResult;
 
         public ViewHolder(View view) {
             super(view);
             mView = view;
-            mIdView = (TextView) view.findViewById(R.id.id);
-            mContentView = (TextView) view.findViewById(R.id.content);
+            mCompanyNameTextView = (TextView) view.findViewById(R.id.company_name_textView);
+            mDistanceTextView = (TextView) view.findViewById(R.id.distance_textView);
             mImageView = (ImageView) view.findViewById(R.id.detail_image);
         }
 
         @Override
         public String toString() {
-            return super.toString() + " '" + mContentView.getText() + "'";
+            return super.toString() + " '" + mDistanceTextView.getText() + "'";
         }
     }
 }

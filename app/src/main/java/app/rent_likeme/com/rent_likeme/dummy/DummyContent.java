@@ -22,6 +22,7 @@ public class DummyContent {
     public static final List<String> mImageNames= Arrays.asList("apple_pie.jpg", "artichokes.jpg",
             "berry_tart.jpg", "brownie.jpg", "cafe_latte.jpg", "cheesecake.jpg");
 
+
     /**
      * A map of sample (dummy) items, by ID.
      */
