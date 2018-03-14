@@ -1,10 +1,13 @@
 package app.rent_likeme.com.rent_likeme.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -15,7 +18,7 @@ import app.rent_likeme.com.rent_likeme.util.Utility;
  * Created by anto004 on 3/3/18.
  */
 
-public class Result implements Comparable<Result>{
+public class Result implements Comparable<Result>,Parcelable {
     @SerializedName("provider")
     @Expose
     public Provider provider;
@@ -117,4 +120,36 @@ public class Result implements Comparable<Result>{
             }
         });
     }
+
+    //Parcelable implementation
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeParcelable(this.provider, flags);
+        dest.writeParcelable(this.address, flags);
+        dest.writeList(this.cars);
+    }
+
+    protected Result(Parcel in) {
+        this.provider = in.readParcelable(Provider.class.getClassLoader());
+        this.address = in.readParcelable(Address.class.getClassLoader());
+        this.cars = new ArrayList<Car>();
+        in.readList(this.cars, Car.class.getClassLoader());
+    }
+
+    public static final Parcelable.Creator<Result> CREATOR = new Parcelable.Creator<Result>() {
+        @Override
+        public Result createFromParcel(Parcel source) {
+            return new Result(source);
+        }
+
+        @Override
+        public Result[] newArray(int size) {
+            return new Result[size];
+        }
+    };
 }

@@ -1,5 +1,6 @@
 package app.rent_likeme.com.rent_likeme.dummy;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import app.rent_likeme.com.rent_likeme.model.Result;
@@ -14,6 +15,15 @@ public class DummyRentalContent {
 
     public static final List<Result> items = results.getResults();
 
+    public static List<String> getImageNames(){
+        List<String> names = new ArrayList<>();
+        for(int i = 1; i <= 10; i++) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("disney_car_").append(i).append(".jpeg");
+            names.add(sb.toString());
+        }
+        return names;
+    }
 
     public static String getDummyJsonString(){
         return "{  \n" +

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.support.v7.widget.RecyclerView;
@@ -13,17 +14,18 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import app.rent_likeme.com.rent_likeme.model.Result;
+import app.rent_likeme.com.rent_likeme.util.Utility;
 
 /**
  * Created by anto004 on 3/3/18.
  */
 
-public class RentalAdapter
-        extends RecyclerView.Adapter<RentalAdapter.ViewHolder> {
-
+public class RentalAdapter extends
+        RecyclerView.Adapter<RentalAdapter.ViewHolder> {
     private final List<Result> mResults;
     private Context mContext;
     private boolean mTwoPane;
@@ -46,12 +48,11 @@ public class RentalAdapter
     public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
         holder.mResult = mResults.get(position);
         holder.mCompanyNameTextView.setText(holder.mResult.provider.companyName);
-        holder.mDistanceTextView.setText(String.valueOf(holder.mResult.distance()));
+        holder.mDistanceTextView.setText(Utility.getFriendlyDistFormat(mContext, holder.mResult.distance()));
 
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 if (mTwoPane) {
                     Bundle arguments = new Bundle();
 //                    arguments.putString(RentalDetailFragment.ARG_ITEM_ID, holder.mResult.id);
@@ -64,8 +65,11 @@ public class RentalAdapter
                             .commit();
                 } else {
                     Intent intent = new Intent(mContext, RentalDetailActivity.class);
-//                    intent.putExtra(RentalDetailFragment.ARG_ITEM_ID, holder.mResult.id);
+                    intent.putExtra(RentalDetailActivity.PROVIDER_KEY, holder.mResult.provider);
+                    intent.putExtra(RentalDetailActivity.ADDRESS_KEY, holder.mResult.address);
+                    intent.putParcelableArrayListExtra(RentalDetailActivity.CAR_KEY, (ArrayList<? extends Parcelable>) holder.mResult.getCars());
                     mContext.startActivity(intent);
+
                     Activity activity = (Activity) mContext;
                     activity.overridePendingTransition(R.anim.come_in_from_right, R.anim.go_out_left);
                 }

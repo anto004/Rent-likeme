@@ -1,4 +1,6 @@
-<resources>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">Rent-likeme</string>
     <string name="title_rental_detail">Rental Detail</string>
+    <!--friendly distance format-->
+    <string name="format_distance"><xliff:g id="dist">%.2f</xliff:g>\u006D</string>
 </resources>

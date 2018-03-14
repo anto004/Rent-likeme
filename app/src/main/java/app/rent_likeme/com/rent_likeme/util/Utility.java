@@ -1,7 +1,14 @@
 package app.rent_likeme.com.rent_likeme.util;
 
+import android.content.Context;
+
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
+
+import app.rent_likeme.com.rent_likeme.R;
 
 /**
  * Created by anto004 on 3/9/18.
@@ -12,8 +19,21 @@ public class Utility {
         return new SimpleDateFormat("EEE, MMM d, ''yy", Locale.US);
     }
 
+    public static String convertLongToDate(long timeInMillis){
+        Date date = new Date(timeInMillis);
+        return getDateFormat().format(date);
+    }
+
     public static SimpleDateFormat getCurrentDateFormat(){
         return new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    }
+
+    public static NumberFormat getDistanceFormat(){
+        return new DecimalFormat("#.##");
+    }
+
+    public static String getFriendlyDistFormat(Context context, Double dist){
+        return context.getString(R.string.format_distance, dist);
     }
 
     //Using Haversine formula

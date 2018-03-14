@@ -40,6 +40,8 @@ public class RentalFetcher {
             // &radius=42
             // &pick_up=2018-06-07
             // &drop_off=2018-06-08&lang=EN&currency=USD"
+            //https://api.sandbox.amadeus.com/v1.2/cars/search-circle?apikey=8ziGGBD5UYagqCGpPGKAk0tCg7BHpnhg&latitude=&longitude=-118.57632&radius=&pick_up=&drop_off=
+            //https://api.sandbox.amadeus.com/v1.2/cars/search-circle?apikey=8ziGGBD5UYagqCGpPGKAk0tCg7BHpnhg&latitude=34.0711762&longitude=-118.09834559999999&radius=20&pick_up=2018-03-07&drop_off=2018-03-08
             try {
                 Address address = addresses[0];
                 double latitude = address.getLatitude();
@@ -82,6 +84,7 @@ public class RentalFetcher {
                     .appendQueryParameter(PICK_UP_PARAM, pickUpDate)
                     .appendQueryParameter(DROP_OFF_PARAM, dropOffDate)
                     .build();
+//
             return new URL(builtUri.toString());
         }
 

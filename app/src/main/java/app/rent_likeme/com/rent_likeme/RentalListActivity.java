@@ -48,17 +48,18 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import app.rent_likeme.com.rent_likeme.dummy.DummyRentalContent;
 import app.rent_likeme.com.rent_likeme.map.GeocoderAddressService;
 import app.rent_likeme.com.rent_likeme.model.Result;
-import app.rent_likeme.com.rent_likeme.util.Utility;
 import app.rent_likeme.com.rent_likeme.util.JSONHelper.Results;
+import app.rent_likeme.com.rent_likeme.util.Utility;
 
 
 /**
@@ -91,6 +92,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     private ProgressBar mProgressBar;
     private EditText mAddressTv;
     private RadioButton mCurrentLocButton;
+    private Calendar mCalendar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,8 +162,10 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         TextView pickUpTv = findViewById(R.id.pick_up_textview);
         pickUpTv.setOnClickListener(this);
 
+        mCalendar = Calendar.getInstance();
         SharedPreferences sharedPreferences = getSharedPreferences(GLOBAL_PREFS, MODE_PRIVATE);
-        String pickUpDate = sharedPreferences.getString(PICK_UP_DATE_PREF, null);
+        Long pickUpDateLong = sharedPreferences.getLong(PICK_UP_DATE_PREF, mCalendar.getTimeInMillis());
+        String pickUpDate = Utility.convertLongToDate(pickUpDateLong);
         if(pickUpDate != null){
             pickUpTv.setText(pickUpDate);
         }
@@ -171,7 +175,8 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
 
         TextView dropOffTv = findViewById(R.id.drop_off_textview);
         dropOffTv.setOnClickListener(this);
-        String dropOffDate = sharedPreferences.getString(DROP_OFF_DATE_PREF, null);
+        Long dropOffDateLong= sharedPreferences.getLong(PICK_UP_DATE_PREF, mCalendar.getTimeInMillis());
+        String dropOffDate = Utility.convertLongToDate(dropOffDateLong);
         if(dropOffDate!= null){
             dropOffTv.setText(dropOffDate);
         }
@@ -190,11 +195,10 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
             // activity should be in two-pane mode.
             mTwoPane = true;
         }
-
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new RentalAdapter(this, mTwoPane, DummyRentalContent.items));
+        recyclerView.setAdapter(new RentalAdapter(this, mTwoPane, new ArrayList<Result>()));
     }
 
     private void hideKeyboard(){
@@ -321,9 +325,8 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     }
 
     public void setCurrentDateOnView(int viewId) {
-        Calendar c = Calendar.getInstance();
         TextView textView = (TextView) findViewById(viewId);
-        textView.setText(Utility.getDateFormat().format(c.getTime()));
+        textView.setText(Utility.getDateFormat().format(mCalendar.getTime()));
     }
 
     private void checkPermissions(){
@@ -401,6 +404,8 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 .build();
     }
 
+    private static String mCal;
+
     public static class DatePickerFragment extends DialogFragment
             implements DatePickerDialog.OnDateSetListener {
 
@@ -417,6 +422,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
 
         public void onDateSet(DatePicker view, int year, int month, int day) {
             int viewId = getArguments().getInt(RentalListActivity.FRAG_VIEW_INFO);
+
             GregorianCalendar cal = new GregorianCalendar(year, month, day);
             String formattedDate = Utility.getDateFormat().format(cal.getTime());
 
@@ -425,8 +431,8 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
 
             SharedPreferences.Editor editor = getActivity()
                     .getSharedPreferences(GLOBAL_PREFS, MODE_PRIVATE).edit();
-            editor.putString(viewId == R.id.pick_up_textview ? PICK_UP_DATE_PREF
-                            : DROP_OFF_DATE_PREF, formattedDate);
+            editor.putLong(viewId == R.id.pick_up_textview ? PICK_UP_DATE_PREF
+                            : DROP_OFF_DATE_PREF, cal.getTimeInMillis());
             editor.apply();
         }
     }
@@ -449,20 +455,28 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                         mLatitude = address.getLatitude();
                         mLongitude = address.getLongitude();
 
-                        Calendar cal = Calendar.getInstance();
-                        String currentDate = Utility.getCurrentDateFormat().format(cal.getTime());
-
                         SharedPreferences prefs = getSharedPreferences(GLOBAL_PREFS, MODE_PRIVATE);
-                        String pickUpDate = prefs.getString(PICK_UP_DATE_PREF, currentDate);
-                        String dropOffDate = prefs.getString(DROP_OFF_DATE_PREF, currentDate);
+                        long pickUpLong = prefs.getLong(PICK_UP_DATE_PREF, mCalendar.getTimeInMillis());
+                        long dropOffLong = prefs.getLong(DROP_OFF_DATE_PREF, mCalendar.getTimeInMillis());
+
+                        Date date = new Date(pickUpLong);
+                        String pickUpDate = Utility.getCurrentDateFormat().format(date);
+                        date = new Date(dropOffLong);
+                        String dropOffDate = Utility.getCurrentDateFormat().format(date);
 
                         if(address.hasLatitude() && address.hasLongitude()) {
                             RentalFetcher.FetchRentalsTask fetchData = new RentalFetcher.FetchRentalsTask(
-                                    pickUpDate, dropOffDate);
+                                                                            pickUpDate, dropOffDate);
                             AsyncTask<Address, Void, Results> results = fetchData.execute(address);
                             try {
                                 mProgressBar.setVisibility(View.GONE);
-                                displayDummyValues(results.get());
+                                if(results.get() != null) {
+                                    displayValuesByDistance(results.get());
+                                }
+                                else{
+                                    Toast.makeText(RentalListActivity.this, "Try a different date!",
+                                                        Toast.LENGTH_SHORT).show();
+                                }
 
                             } catch (InterruptedException | ExecutionException e) {
                                 e.printStackTrace();
@@ -484,14 +498,17 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         }
     }
 
-    private void displayDummyValues(Results results){
+    private void displayValuesByDistance(Results results){
         List<Result> resultList = results.getResults();
         for(Result result: resultList){
             if(mLatitude != null && mLongitude != null) {
                 result.latitude = mLatitude;
                 result.longitude = mLongitude;
             }
+            String d = Utility.getDistanceFormat().format(result.distance());
+            Log.v(LOG_TAG, "Distance: "+Utility.getFriendlyDistFormat(this, result.distance()));
         }
+
         //Sort by distance using provided location as reference
         Collections.sort(resultList);
         mRecyclerView.swapAdapter(new RentalAdapter(this, mTwoPane, resultList), false);
