@@ -26,6 +26,7 @@ import java.util.Random;
 
 import app.rent_likeme.com.rent_likeme.dummy.DummyRentalContent;
 import app.rent_likeme.com.rent_likeme.model.Address;
+import app.rent_likeme.com.rent_likeme.model.Car;
 import app.rent_likeme.com.rent_likeme.model.Provider;
 
 /**
@@ -42,6 +43,7 @@ public class RentalDetailActivity extends AppCompatActivity {
     public static final String CAR_KEY = "car";
     private CollapsingToolbarLayout mCollapsingToolbar;
     private LinearLayout mParentLayout;
+    private List<Car> mCars;
 
 
     @Override
@@ -55,20 +57,16 @@ public class RentalDetailActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                addCarListItem();
                 Snackbar.make(view, "Replace with your own detail action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
 
-        // Show the Up button in the action bar.
+        //Show the Up button in the action bar.
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
-
-        mCollapsingToolbar = (CollapsingToolbarLayout) findViewById(R.id.toolbar_layout);
-        displayImageOnToolbar();
 
         if (savedInstanceState == null) {
             Bundle arguments = new Bundle();
@@ -86,8 +84,12 @@ public class RentalDetailActivity extends AppCompatActivity {
 //                    .commit();
         }
 
+        mCollapsingToolbar = (CollapsingToolbarLayout) findViewById(R.id.toolbar_layout);
+        displayImageOnToolbar();
+
         Provider mProvider = getIntent().getParcelableExtra(PROVIDER_KEY);
         Address mAddress = getIntent().getParcelableExtra(ADDRESS_KEY);
+        mCars = getIntent().getParcelableArrayListExtra(CAR_KEY);
 
         TextView companyNameTv = (TextView) findViewById(R.id.company_name_detail_textView);
         companyNameTv.setText(mProvider.companyName);
@@ -97,31 +99,41 @@ public class RentalDetailActivity extends AppCompatActivity {
 
         mParentLayout = (LinearLayout) findViewById(R.id.car_list_parent);
 
+        if(mCars != null) {
+            createMyCarAdapter();
+        }
     }
 
-    public void addCarListItem() {
-        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View rowView = inflater.inflate(R.layout.car_list_item, null);
+    //dynamically adding view to scroll view
+    public void createMyCarAdapter(){
+        for(int i = 0; i < mCars.size(); i++){
+            CarHolder carHolder = createCarItemView();
+            addCarListItem(carHolder, i);
+        }
+    }
 
-        mParentLayout.addView(rowView, mParentLayout.getChildCount() - 1);
+    public CarHolder createCarItemView(){
+        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View view = inflater.inflate(R.layout.car_list_item, null);
+        return new CarHolder(view);
+    }
+
+    public void addCarListItem(CarHolder holder, int position) {
+        holder.mCar = mCars.get(position);
+        holder.mCategory.setText(holder.mCar.vehicleInfo.category);
+        holder.mType.setText(holder.mCar.vehicleInfo.type);
+        holder.mPrice.setText(holder.mCar.rates.get(0).price.amount);
+
+        mParentLayout.addView(holder.mView, mParentLayout.getChildCount() - 1);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-
         if (id == android.R.id.home) {
-            // This ID represents the Home or Up button. In the case of this
-            // activity, the Up button is shown. For
-            // more details, see the Navigation pattern on Android Design:
-            //
-            // http://developer.android.com/design/patterns/navigation.html#up-vs-back
-            //
-//            navigateUpTo(new Intent(this, RentalListActivity.class));
             onBackPressed();
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -167,6 +179,21 @@ public class RentalDetailActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    public class CarHolder {
+        private Car mCar;
+        private TextView mCategory;
+        private TextView mType;
+        private TextView mPrice;
+        private View mView;
+
+        public CarHolder(View view) {
+            mView = view;
+            mCategory = (TextView) view.findViewById(R.id.category_textView);
+            mType = (TextView) view.findViewById(R.id.type_textView);
+            mPrice = (TextView) view.findViewById(R.id.price_textView);
         }
     }
 }
