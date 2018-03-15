@@ -1,13 +1,14 @@
 package app.rent_likeme.com.rent_likeme;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
@@ -18,6 +19,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,12 +55,24 @@ public class RentalDetailActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.detail_toolbar);
         setSupportActionBar(toolbar);
 
+        Provider mProvider = getIntent().getParcelableExtra(PROVIDER_KEY);
+        final Address mAddress = getIntent().getParcelableExtra(ADDRESS_KEY);
+        mCars = getIntent().getParcelableArrayListExtra(CAR_KEY);
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own detail action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                String dest = mAddress.line1 + ", " + mAddress.city + ", "  + mAddress.region + ", " + mAddress.country;
+                Uri intentUri = Uri.parse("google.navigation:q=" + dest);
+                Intent mapIntent = new Intent(Intent.ACTION_VIEW, intentUri);
+                mapIntent.setPackage("com.google.android.apps.maps");
+                if(mapIntent.resolveActivity(getPackageManager()) != null){
+                    startActivity(mapIntent);
+                }
+                else {
+                    Toast.makeText(RentalDetailActivity.this, "Device Has No Navigation App Installed",Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -85,11 +99,8 @@ public class RentalDetailActivity extends AppCompatActivity {
         }
 
         mCollapsingToolbar = (CollapsingToolbarLayout) findViewById(R.id.toolbar_layout);
+        mCollapsingToolbar.setTitle(mProvider.companyName);
         displayImageOnToolbar();
-
-        Provider mProvider = getIntent().getParcelableExtra(PROVIDER_KEY);
-        Address mAddress = getIntent().getParcelableExtra(ADDRESS_KEY);
-        mCars = getIntent().getParcelableArrayListExtra(CAR_KEY);
 
         TextView companyNameTv = (TextView) findViewById(R.id.company_name_detail_textView);
         companyNameTv.setText(mProvider.companyName);
