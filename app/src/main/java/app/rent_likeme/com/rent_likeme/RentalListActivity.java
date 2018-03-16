@@ -36,6 +36,7 @@ import android.widget.ImageButton;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -70,7 +71,7 @@ import app.rent_likeme.com.rent_likeme.util.Utility;
  * item details. On tablets, the activity presents the list of items and
  * item details side-by-side using two vertical panes.
  */
-public class RentalListActivity extends AppCompatActivity implements View.OnClickListener {
+public class RentalListActivity extends AppCompatActivity implements View.OnClickListener{
 
     public static final String LOG_TAG = RentalListActivity.class.getSimpleName();
     private static final int FREQ_INTERVAL = 5000; //5 secs
@@ -92,7 +93,11 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     private ProgressBar mProgressBar;
     private EditText mAddressTv;
     private RadioButton mCurrentLocButton;
+    private RadioGroup mPopUpGroup;
     private Calendar mCalendar;
+    private List<Result> mResults;
+    private View mPopUpView;
+    private RentalAdapter mRentalAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,14 +114,17 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
             @Override
             public void onClick(View view) {
                 LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-                View popUpView = inflater.inflate(R.layout.pop_up_window, null);
-                mPopUpWindow = new PopupWindow(popUpView, RecyclerView.LayoutParams.MATCH_PARENT,
-                        RecyclerView.LayoutParams.WRAP_CONTENT);
+                mPopUpView = inflater.inflate(R.layout.pop_up_window, null);
+                if(mPopUpWindow == null) {
+                    mPopUpWindow = new PopupWindow(mPopUpView, RecyclerView.LayoutParams.MATCH_PARENT,
+                            RecyclerView.LayoutParams.WRAP_CONTENT);
+                }
 
-                TextView distanceTv = popUpView.findViewById(R.id.pop_up_distance_textview);
+                TextView distanceTv = mPopUpView.findViewById(R.id.pop_up_distance_textview);
                 distanceTv.setOnClickListener(RentalListActivity.this);
-                ImageButton closeButton = popUpView.findViewById(R.id.close_pop_up_button);
+                ImageButton closeButton = mPopUpView.findViewById(R.id.close_pop_up_button);
                 closeButton.setOnClickListener(RentalListActivity.this);
+                mPopUpGroup = (RadioGroup)mPopUpView.findViewById(R.id.pop_up_sort_group);
                 mPopUpWindow.setTouchInterceptor(new View.OnTouchListener() {
                     @Override
                     public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -140,7 +148,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         mCurrentLocButton = (RadioButton) findViewById(R.id.current_loc_radio_button);
         mCurrentLocButton.setOnClickListener(this);
         mAddressTv = findViewById(R.id.address_editText);
-        //click listener won't respond to single click
+        //editText click listener won't respond on single click with OnClickListener
         mAddressTv.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -198,7 +206,8 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new RentalAdapter(this, mTwoPane, new ArrayList<Result>()));
+        mRentalAdapter = new RentalAdapter(this, mTwoPane, new ArrayList<Result>());
+        recyclerView.setAdapter(mRentalAdapter);
     }
 
     private void hideKeyboard(){
@@ -244,8 +253,6 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     @Override
     public void onClick(View view) {
         switch (view.getId()){
-            case R.id.address_editText:
-                break;
             case R.id.current_loc_radio_button:
                 if(mCurrentLocButton.isChecked()){
                     if(mLocation == null){
@@ -257,12 +264,9 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                     mAddressTv.getText().clear();
                 }
                 break;
-            case R.id.pop_up_distance_textview:
-                closePopUpWindow();
-                break;
             case R.id.close_pop_up_button:
+                sortRentalsOnRadioButtonChecked();
                 closePopUpWindow();
-                onResume();
                 break;
             case R.id.pick_up_textview:
                 callDatePickerFragment(R.id.pick_up_textview);
@@ -404,8 +408,6 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 .build();
     }
 
-    private static String mCal;
-
     public static class DatePickerFragment extends DialogFragment
             implements DatePickerDialog.OnDateSetListener {
 
@@ -470,8 +472,9 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                             AsyncTask<Address, Void, Results> results = fetchData.execute(address);
                             try {
                                 mProgressBar.setVisibility(View.GONE);
-                                if(results.get() != null) {
-                                    displayValuesByDistance(results.get());
+                                mResults = results.get().getResults();
+                                if(mResults != null) {
+                                    displayRentalsByDistance(mResults);
                                 }
                                 else{
                                     Toast.makeText(RentalListActivity.this, "Try a different date!",
@@ -498,20 +501,71 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         }
     }
 
-    private void displayValuesByDistance(Results results){
-        List<Result> resultList = results.getResults();
-        for(Result result: resultList){
-            if(mLatitude != null && mLongitude != null) {
-                result.latitude = mLatitude;
-                result.longitude = mLongitude;
-            }
-            String d = Utility.getDistanceFormat().format(result.distance());
-            Log.v(LOG_TAG, "Distance: "+Utility.getFriendlyDistFormat(this, result.distance()));
+    private void displayRentalsByDistance(List<Result> results){
+        if(mLatitude == null && mLongitude == null) {
+            return;
         }
 
+        for(Result result: results){
+            result.latitude = mLatitude;
+            result.longitude = mLongitude;
+        }
         //Sort by distance using provided location as reference
-        Collections.sort(resultList);
-        mRecyclerView.swapAdapter(new RentalAdapter(this, mTwoPane, resultList), false);
+        Collections.sort(results);
+        swapRentalAdapter(results);
+    }
+
+    private void displayRentalsByCompany(List<Result> results){
+        Result.sortByCompanyName(results);
+        swapRentalAdapter(results);
+    }
+
+    private void displayRentalsByPriceLowToHigh(List<Result> results){
+        Result.sortByPriceLowToHigh(results);
+        swapRentalAdapter(results);
+    }
+
+    private void displayRentalsByPriceHighToLow(List<Result> results){
+        Result.sortByPriceHighToLow(results);
+        swapRentalAdapter(results);
+    }
+
+    private void swapRentalAdapter(final List<Result> results) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mRentalAdapter.notifyDataSetChanged();
+                mRentalAdapter = new RentalAdapter(RentalListActivity.this, mTwoPane, results);
+                mRecyclerView.swapAdapter(mRentalAdapter, false);
+            }
+        });
+
+    }
+
+    private void sortRentalsOnRadioButtonChecked(){
+        if(mResults == null){
+            return;
+        }
+
+        int popUpSelected = mPopUpGroup.getCheckedRadioButtonId();
+        Log.v(LOG_TAG, "popUpSelected: "+ popUpSelected);
+        RadioButton popUpButton = (RadioButton)mPopUpView.findViewById(popUpSelected);
+
+        switch(popUpButton.getId()){
+            case R.id.distance_checkBox:
+                displayRentalsByDistance(mResults);
+                break;
+            case R.id.company_checkBox:
+                displayRentalsByCompany(mResults);
+                popUpButton.setChecked(true);
+                break;
+            case R.id.price_lowToHigh_checkBox:
+                displayRentalsByPriceLowToHigh(mResults);
+                break;
+            case R.id.price_highToLow_checkBox:
+                displayRentalsByPriceHighToLow(mResults);
+                break;
+        }
     }
 }
 

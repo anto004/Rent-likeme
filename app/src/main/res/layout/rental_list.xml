@@ -5,8 +5,9 @@
     android:id="@+id/rental_list_relativeLayout"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_margin="16dp"
-    android:focusableInTouchMode="true">
+    android:background="@android:color/white"
+    android:focusableInTouchMode="true"
+    android:padding="16dp">
 
     <EditText
         android:id="@+id/address_editText"
@@ -18,7 +19,7 @@
         android:hint="Address"
         android:inputType="textAutoComplete|textPostalAddress"
         android:textColorHint="@android:color/darker_gray"
-        android:textColorLink="@color/common_google_signin_btn_text_dark_focused"/>
+        android:textColorLink="@color/common_google_signin_btn_text_dark_focused" />
 
     <Button
         android:id="@+id/rental_search_button"

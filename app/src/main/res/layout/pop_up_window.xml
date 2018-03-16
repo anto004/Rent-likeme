@@ -62,16 +62,19 @@
         android:textSize="20sp" />
 
     <RadioGroup
+        android:id="@+id/pop_up_sort_group"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_below="@id/pop_up_linearLayout"
+        android:checkedButton="@+id/distance_checkBox"
         android:orientation="vertical">
 
         <RadioButton
             android:id="@+id/distance_checkBox"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:text="Distance"/>
 
 
         <RadioButton
@@ -79,7 +82,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
-            android:layout_below="@+id/distance_checkBox" />
+            android:layout_below="@+id/distance_checkBox"
+            android:text="Company"/>
 
         <RadioButton
             android:id="@+id/price_lowToHigh_checkBox"
@@ -98,7 +102,4 @@
             android:text="high->low" />
 
     </RadioGroup>
-
-
-
 </RelativeLayout>

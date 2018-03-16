@@ -2,5 +2,9 @@
     <string name="app_name">Rent-likeme</string>
     <string name="title_rental_detail">Rental Detail</string>
     <!--friendly distance format-->
-    <string name="format_distance"><xliff:g id="dist">%.2f</xliff:g>\u006D</string>
+    <string name="format_distance"><xliff:g id="dist">\u007E%.2f</xliff:g>\u006D\u69</string>
+
+    <!--price with $ format-->
+    <string name="format_price"><xliff:g id="price">\u0024%.2f</xliff:g></string>
+
 </resources>

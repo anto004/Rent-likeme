@@ -19,6 +19,10 @@ public class Provider implements Parcelable {
     @Expose
     public String companyName;
 
+    public Provider(){
+
+    }
+
     protected Provider(Parcel in) {
         companyCode = in.readString();
         companyName = in.readString();

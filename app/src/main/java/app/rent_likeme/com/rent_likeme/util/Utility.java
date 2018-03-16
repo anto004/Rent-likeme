@@ -41,21 +41,26 @@ public class Utility {
         String[] strArray = s.split("\\s");
 
         for(int i = 0; i < strArray.length - 1; i++){
-            String sb = strArray[i];
-            if(Character.isDigit(sb.charAt(0))){
-                stringBuilder.append(sb);
+            String sb = strArray[i].trim();
+            if(sb.length() > 0) {
+                if (Character.isDigit(sb.charAt(0))) {
+                    stringBuilder.append(sb);
+                } else {
+                    sb = sb.toLowerCase();
+                    char firstChar = (char) (sb.charAt(0) - 'a' + 'A');
+                    String remaining = sb.substring(1, sb.length());
+                    stringBuilder.append(firstChar).append(remaining);
+                }
+                stringBuilder.append(" ");
             }
-            else {
-                sb = sb.toLowerCase();
-                char firstChar = (char) (sb.charAt(0) - 'a' + 'A');
-                String rightSide = sb.substring(1, sb.length());
-                stringBuilder.append(firstChar).append(rightSide);
-            }
-            stringBuilder.append(" ");
         }
         stringBuilder.append(strArray[strArray.length - 1]);
 
         return stringBuilder.toString();
+    }
+
+    public static String getFormattedPrice(Context context, double price){
+        return context.getString(R.string.format_price, price);
     }
 
     //Using Haversine formula

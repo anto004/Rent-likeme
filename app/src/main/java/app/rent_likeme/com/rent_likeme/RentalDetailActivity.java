@@ -136,7 +136,8 @@ public class RentalDetailActivity extends AppCompatActivity {
         holder.mCar = mCars.get(position);
         holder.mCategory.setText(holder.mCar.vehicleInfo.category);
         holder.mType.setText(holder.mCar.vehicleInfo.type);
-        holder.mPrice.setText(holder.mCar.rates.get(0).price.amount);
+        String price = holder.mCar.rates.get(0).price.amount;
+        holder.mPrice.setText(Utility.getFormattedPrice(this, Double.parseDouble(price)));
 
         mParentLayout.addView(holder.mView, mParentLayout.getChildCount() - 1);
     }
