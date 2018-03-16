@@ -77,6 +77,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     private static final int FREQ_INTERVAL = 5000; //5 secs
     private static final int FAST_INTERVAL = 1000; //1 sec
     public static final int LOC_REQ_CODE = 200;
+    public static final int ONE_WEEK_DROP_OFF = 3600 * 24 * 7 * 1000; //1 week ahead
     public static final String GLOBAL_PREFS = "rental_prefs";
     public static final String ADDRESS_PREF = "address_prefs";
     public static final String PICK_UP_DATE_PREF = "pick_up_date";
@@ -108,37 +109,35 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         setSupportActionBar(toolbar);
         toolbar.setTitle(getTitle());
 
+        LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+        mPopUpView = inflater.inflate(R.layout.pop_up_window, null);
+
+        mPopUpWindow = new PopupWindow(mPopUpView, RecyclerView.LayoutParams.MATCH_PARENT,
+                RecyclerView.LayoutParams.WRAP_CONTENT);
+
+        mPopUpGroup = (RadioGroup)mPopUpView.findViewById(R.id.pop_up_sort_group);
+        ImageButton closeButton = mPopUpView.findViewById(R.id.close_pop_up_button);
+        closeButton.setOnClickListener(RentalListActivity.this);
+
+        mPopUpWindow.setTouchInterceptor(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if(motionEvent.getAction() == MotionEvent.ACTION_OUTSIDE){
+                    closePopUpWindow();
+                    return true;
+                }
+                return false;
+            }
+        });
+
         final FrameLayout rentalFrameLayout = (FrameLayout) findViewById(R.id.rental_frame_layout);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-                mPopUpView = inflater.inflate(R.layout.pop_up_window, null);
-                if(mPopUpWindow == null) {
-                    mPopUpWindow = new PopupWindow(mPopUpView, RecyclerView.LayoutParams.MATCH_PARENT,
-                            RecyclerView.LayoutParams.WRAP_CONTENT);
-                }
-
-                TextView distanceTv = mPopUpView.findViewById(R.id.pop_up_distance_textview);
-                distanceTv.setOnClickListener(RentalListActivity.this);
-                ImageButton closeButton = mPopUpView.findViewById(R.id.close_pop_up_button);
-                closeButton.setOnClickListener(RentalListActivity.this);
-                mPopUpGroup = (RadioGroup)mPopUpView.findViewById(R.id.pop_up_sort_group);
-                mPopUpWindow.setTouchInterceptor(new View.OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View view, MotionEvent motionEvent) {
-                        if(motionEvent.getAction() == MotionEvent.ACTION_OUTSIDE){
-                            closePopUpWindow();
-                            return true;
-                        }
-                        return false;
-                    }
-                });
                 mPopUpWindow.setOutsideTouchable(true);
                 mPopUpWindow.setAnimationStyle(R.style.pop_up_window_animation);
                 mPopUpWindow.showAtLocation(rentalFrameLayout, Gravity.BOTTOM, 0, 0);
-
             }
         });
 
@@ -170,11 +169,13 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         TextView pickUpTv = findViewById(R.id.pick_up_textview);
         pickUpTv.setOnClickListener(this);
 
+        //setting current date by default to pickUp and dropOff
         mCalendar = Calendar.getInstance();
         SharedPreferences sharedPreferences = getSharedPreferences(GLOBAL_PREFS, MODE_PRIVATE);
-        Long pickUpDateLong = sharedPreferences.getLong(PICK_UP_DATE_PREF, mCalendar.getTimeInMillis());
-        String pickUpDate = Utility.convertLongToDate(pickUpDateLong);
-        if(pickUpDate != null){
+        Long pickUpDateLong = sharedPreferences.getLong(PICK_UP_DATE_PREF, 0);
+
+        if(pickUpDateLong > 0){
+            String pickUpDate = Utility.convertLongToDate(pickUpDateLong);
             pickUpTv.setText(pickUpDate);
         }
         else{
@@ -183,9 +184,10 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
 
         TextView dropOffTv = findViewById(R.id.drop_off_textview);
         dropOffTv.setOnClickListener(this);
-        Long dropOffDateLong= sharedPreferences.getLong(PICK_UP_DATE_PREF, mCalendar.getTimeInMillis());
-        String dropOffDate = Utility.convertLongToDate(dropOffDateLong);
-        if(dropOffDate!= null){
+
+        Long dropOffDateLong= sharedPreferences.getLong(DROP_OFF_DATE_PREF, 0);
+        if(dropOffDateLong > 0){
+            String dropOffDate = Utility.convertLongToDate(dropOffDateLong);
             dropOffTv.setText(dropOffDate);
         }
         else{
@@ -206,7 +208,8 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        mRentalAdapter = new RentalAdapter(this, mTwoPane, new ArrayList<Result>());
+        mResults = new ArrayList<Result>();
+        mRentalAdapter = new RentalAdapter(this, mTwoPane, mResults);
         recyclerView.setAdapter(mRentalAdapter);
     }
 
@@ -275,10 +278,10 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 callDatePickerFragment(R.id.drop_off_textview);
                 break;
             case R.id.rental_search_button:
-                startIntentToFetchLatLong();
-                mProgressBar.setVisibility(View.VISIBLE);
+                //mProgressBar.setVisibility(View.VISIBLE);
                 mAddressTv.clearFocus();
                 hideKeyboard();
+                startIntentToFetchLatLong();
                 break;
             case R.id.rental_list_relativeLayout:
                 mAddressTv.clearFocus();
@@ -324,13 +327,15 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
             String address = mAddressTv.getText().toString();
             intent.putExtra(GeocoderAddressService.ADDRESS_NAME_KEY, address);
         }
-        mProgressBar.setVisibility(View.VISIBLE);
         startService(intent);
     }
 
     public void setCurrentDateOnView(int viewId) {
         TextView textView = (TextView) findViewById(viewId);
-        textView.setText(Utility.getDateFormat().format(mCalendar.getTime()));
+        long currentTimeInMillis = mCalendar.getTimeInMillis() + ONE_WEEK_DROP_OFF;
+        //Set current date for pickUp and one week later for dropOff
+        textView.setText(viewId == R.id.pick_up_textview ? Utility.getDateFormat().format(mCalendar.getTime())
+                                    : Utility.getDateFormat().format(new Date(currentTimeInMillis)));
     }
 
     private void checkPermissions(){
@@ -382,7 +387,6 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 @Override
                 public void onSuccess(Location location) {
                     mLocation = location;
-                    Log.v(LOG_TAG, "Got location: " + mLocation.toString());
                 }
             });
         }
@@ -440,20 +444,26 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     }
 
     class AddressResultReceiver extends ResultReceiver {
-
         public AddressResultReceiver(Handler handler) {
             super(handler);
         }
 
         @Override
-        protected void onReceiveResult(int resultCode, Bundle resultData) {
-            if(resultCode == GeocoderAddressService.SUCCESS_RESULT){
-                final Address address = resultData.getParcelable(GeocoderAddressService.RESULT_ADDRESS_KEY);
+        protected void onReceiveResult(int resultCode, final Bundle resultData) {
+            if(resultCode == GeocoderAddressService.RUNNING_RESULT) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Log.v(LOG_TAG, "Receive latitude and longitude: " + address.getLatitude()
-                                    +address.getLongitude() +" "+ address.getCountryName());
+                        mProgressBar.setVisibility(View.VISIBLE);
+                    }
+                });
+            }
+
+            if(resultCode == GeocoderAddressService.SUCCESS_RESULT){
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Address address = resultData.getParcelable(GeocoderAddressService.RESULT_ADDRESS_KEY);
                         mLatitude = address.getLatitude();
                         mLongitude = address.getLongitude();
 
@@ -468,7 +478,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
 
                         if(address.hasLatitude() && address.hasLongitude()) {
                             RentalFetcher.FetchRentalsTask fetchData = new RentalFetcher.FetchRentalsTask(
-                                                                            pickUpDate, dropOffDate);
+                                    pickUpDate, dropOffDate);
                             AsyncTask<Address, Void, Results> results = fetchData.execute(address);
                             try {
                                 mProgressBar.setVisibility(View.GONE);
@@ -478,7 +488,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                                 }
                                 else{
                                     Toast.makeText(RentalListActivity.this, "Try a different date!",
-                                                        Toast.LENGTH_SHORT).show();
+                                            Toast.LENGTH_SHORT).show();
                                 }
 
                             } catch (InterruptedException | ExecutionException e) {
@@ -512,52 +522,36 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         }
         //Sort by distance using provided location as reference
         Collections.sort(results);
-        swapRentalAdapter(results);
+        mRentalAdapter.swapRentals(results);
     }
 
     private void displayRentalsByCompany(List<Result> results){
         Result.sortByCompanyName(results);
-        swapRentalAdapter(results);
+        mRentalAdapter.swapRentals(results);
     }
 
     private void displayRentalsByPriceLowToHigh(List<Result> results){
         Result.sortByPriceLowToHigh(results);
-        swapRentalAdapter(results);
+        mRentalAdapter.swapRentals(mResults);
     }
 
     private void displayRentalsByPriceHighToLow(List<Result> results){
         Result.sortByPriceHighToLow(results);
-        swapRentalAdapter(results);
-    }
-
-    private void swapRentalAdapter(final List<Result> results) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mRentalAdapter.notifyDataSetChanged();
-                mRentalAdapter = new RentalAdapter(RentalListActivity.this, mTwoPane, results);
-                mRecyclerView.swapAdapter(mRentalAdapter, false);
-            }
-        });
-
+        mRentalAdapter.swapRentals(mResults);
     }
 
     private void sortRentalsOnRadioButtonChecked(){
         if(mResults == null){
             return;
         }
-
         int popUpSelected = mPopUpGroup.getCheckedRadioButtonId();
-        Log.v(LOG_TAG, "popUpSelected: "+ popUpSelected);
         RadioButton popUpButton = (RadioButton)mPopUpView.findViewById(popUpSelected);
-
         switch(popUpButton.getId()){
             case R.id.distance_checkBox:
                 displayRentalsByDistance(mResults);
                 break;
             case R.id.company_checkBox:
                 displayRentalsByCompany(mResults);
-                popUpButton.setChecked(true);
                 break;
             case R.id.price_lowToHigh_checkBox:
                 displayRentalsByPriceLowToHigh(mResults);

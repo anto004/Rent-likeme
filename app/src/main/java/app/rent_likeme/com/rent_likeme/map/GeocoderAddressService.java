@@ -22,8 +22,9 @@ import java.util.Locale;
 
 public class GeocoderAddressService extends IntentService {
     public static final String LOG_TAG = GeocoderAddressService.class.getSimpleName();
-    public static final int SUCCESS_RESULT = 0;
-    public static final int FAILURE_RESULT = 1;
+    public static final int RUNNING_RESULT = 0;
+    public static final int SUCCESS_RESULT = 1;
+    public static final int FAILURE_RESULT = 2;
     public static final int ADDRESS_INPUT_NAME_KEY = 10;
     public static final int ADDRESS_INPUT_LOCATION_KEY = 11 ;
     public static final String RETURN_RECEIVER_KEY = "return_receiver";
@@ -44,6 +45,10 @@ public class GeocoderAddressService extends IntentService {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         String errorMessage = "";
         List<Address> addressResult = null;
+
+        mResultReceiver = intent.getParcelableExtra(RETURN_RECEIVER_KEY);
+        //Informing UI that service is running
+        mResultReceiver.send(RUNNING_RESULT, Bundle.EMPTY);
 
         int inputType = intent.getIntExtra(INPUT_TYPE_KEY, 0);
         if(inputType == ADDRESS_INPUT_NAME_KEY) {
@@ -67,7 +72,6 @@ public class GeocoderAddressService extends IntentService {
             }
         }
 
-        mResultReceiver = intent.getParcelableExtra(RETURN_RECEIVER_KEY);
         if(addressResult == null || addressResult.size() == 0){
             if(errorMessage.isEmpty()){
                 errorMessage = "Not Found";
@@ -85,6 +89,8 @@ public class GeocoderAddressService extends IntentService {
             deliverResultToReceiver(SUCCESS_RESULT,
                     TextUtils.join(System.getProperty("line.separator"),addressFragments), address);
         }
+
+        this.stopSelf();
     }
 
     private void deliverResultToReceiver(int resultCode, String message, Address address) {

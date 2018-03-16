@@ -26,13 +26,13 @@ import app.rent_likeme.com.rent_likeme.util.Utility;
 
 public class RentalAdapter extends
         RecyclerView.Adapter<RentalAdapter.ViewHolder> {
-    private final List<Result> mResults;
+    private List<Result> mResultList;
     private Context mContext;
     private boolean mTwoPane;
 
     public RentalAdapter(Context context, Boolean twoPane, List<Result> items) {
         this.mContext = context;
-        this.mResults = items;
+        this.mResultList = items;
         this.mTwoPane = twoPane;
     }
 
@@ -46,7 +46,7 @@ public class RentalAdapter extends
 
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
-        holder.mResult = mResults.get(position);
+        holder.mResult = mResultList.get(position);
         holder.mCompanyNameTextView.setText(holder.mResult.provider.companyName);
         holder.mDistanceTextView.setText(Utility.getFriendlyDistFormat(mContext, holder.mResult.distance()));
 
@@ -79,7 +79,13 @@ public class RentalAdapter extends
 
     @Override
     public int getItemCount() {
-        return mResults.size();
+        return mResultList.size();
+    }
+
+    public void swapRentals(List<Result> results){
+        this.mResultList.clear();
+        this.mResultList.addAll(results); // swap
+        notifyDataSetChanged(); // notify
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
