@@ -30,6 +30,7 @@ import app.rent_likeme.com.rent_likeme.dummy.DummyRentalContent;
 import app.rent_likeme.com.rent_likeme.model.Address;
 import app.rent_likeme.com.rent_likeme.model.Car;
 import app.rent_likeme.com.rent_likeme.model.Provider;
+import app.rent_likeme.com.rent_likeme.util.Utility;
 
 /**
  * An activity representing a single Rental detail screen. This
@@ -39,6 +40,7 @@ import app.rent_likeme.com.rent_likeme.model.Provider;
  */
 public class RentalDetailActivity extends AppCompatActivity {
 
+    public static final String LOG_TAG = RentalDetailActivity.class.getSimpleName();
     public static final String CAR_DETAILS_KEY = "car_details";
     public static final String PROVIDER_KEY = "provider";
     public static final String ADDRESS_KEY = "address";
@@ -106,7 +108,8 @@ public class RentalDetailActivity extends AppCompatActivity {
         companyNameTv.setText(mProvider.companyName);
 
         TextView addressTv = (TextView) findViewById(R.id.detail_address_textView);
-        addressTv.setText(mAddress.line1 + ", "+ mAddress.city);
+        String address = mAddress.line1 + ", " + mAddress.city + ", "  + mAddress.region;
+        addressTv.setText(Utility.formatAddress(address));
 
         mParentLayout = (LinearLayout) findViewById(R.id.car_list_parent);
 

@@ -62,6 +62,7 @@
         android:id="@+id/detail_nestedScrollView"
         android:layout_width="match_parent"
         android:layout_height="566dp"
+        android:background="@drawable/list_item_border"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:layout_editor_absoluteY="201dp">
 
@@ -69,35 +70,40 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="top"
-            android:layout_margin="16dp"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="16dp">
 
             <TextView
                 android:id="@+id/company_name_detail_textView"
+                style="@style/TextAppearance.AppCompat.Title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_marginLeft="?android:attr/windowTitleSize"
                 android:layout_marginRight="?android:attr/windowTitleSize"
-                android:layout_marginTop="?android:attr/windowTitleSize"
+                android:layout_marginTop="28dp"
                 android:gravity="center"
-                android:text="Company Name" />
+                android:text="Company Name"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/detail_address_textView"
+                style="@style/Base.TextAppearance.AppCompat.SearchResult.Subtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:layout_marginBottom="?android:attr/windowTitleSize"
+                android:layout_marginBottom="28dp"
                 android:gravity="center"
-                android:text="line1, city, region, country" />
+                android:text="line1, city, region, country"
+                android:textStyle="italic" />
 
             <LinearLayout
                 android:id="@+id/car_list_parent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:padding="5dp">
 
             </LinearLayout>
 
@@ -116,7 +122,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical|start"
         android:layout_margin="@dimen/fab_margin"
-        android:src="@drawable/ic_directions_white"
+        android:cropToPadding="false"
+        android:src="@drawable/ic_directions_car_48dp"
+        app:fabSize="normal"
         app:layout_anchor="@+id/detail_nestedScrollView"
         app:layout_anchorGravity="top|end" />
 

@@ -36,6 +36,28 @@ public class Utility {
         return context.getString(R.string.format_distance, dist);
     }
 
+    public static String formatAddress(String s){
+        StringBuilder stringBuilder = new StringBuilder();
+        String[] strArray = s.split("\\s");
+
+        for(int i = 0; i < strArray.length - 1; i++){
+            String sb = strArray[i];
+            if(Character.isDigit(sb.charAt(0))){
+                stringBuilder.append(sb);
+            }
+            else {
+                sb = sb.toLowerCase();
+                char firstChar = (char) (sb.charAt(0) - 'a' + 'A');
+                String rightSide = sb.substring(1, sb.length());
+                stringBuilder.append(firstChar).append(rightSide);
+            }
+            stringBuilder.append(" ");
+        }
+        stringBuilder.append(strArray[strArray.length - 1]);
+
+        return stringBuilder.toString();
+    }
+
     //Using Haversine formula
     //return distance in miles
     public static double calculateDistance(double lat1, double long1,
