@@ -26,22 +26,17 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Random;
 
-import app.rent_likeme.com.rent_likeme.dummy.DummyRentalContent;
 import app.rent_likeme.com.rent_likeme.model.Address;
 import app.rent_likeme.com.rent_likeme.model.Car;
 import app.rent_likeme.com.rent_likeme.model.Provider;
 import app.rent_likeme.com.rent_likeme.util.Utility;
 
 /**
- * An activity representing a single Rental detail screen. This
- * activity is only used on narrow width devices. On tablet-size devices,
- * item details are presented side-by-side with a list of items
- * in a {@link RentalListActivity}.
+ * created by anto004
+ * Image credits: http://cars.disney.com
  */
 public class RentalDetailActivity extends AppCompatActivity {
-
     public static final String LOG_TAG = RentalDetailActivity.class.getSimpleName();
-    public static final String CAR_DETAILS_KEY = "car_details";
     public static final String PROVIDER_KEY = "provider";
     public static final String ADDRESS_KEY = "address";
     public static final String CAR_KEY = "car";
@@ -84,22 +79,6 @@ public class RentalDetailActivity extends AppCompatActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        if (savedInstanceState == null) {
-            Bundle arguments = new Bundle();
-            arguments.putParcelable(RentalDetailFragment.ARG_ITEM_PROVIDER,
-                    getIntent().getParcelableExtra(PROVIDER_KEY));
-            arguments.putParcelable(RentalDetailFragment.ARG_ITEM_ADDRESS,
-                    getIntent().getParcelableExtra(ADDRESS_KEY));
-            arguments.putParcelableArrayList(RentalDetailFragment.ARG_ITEM_CAR,
-                    getIntent().getParcelableArrayListExtra(CAR_KEY));
-            RentalDetailFragment fragment = new RentalDetailFragment();
-            fragment.setArguments(arguments);
-
-//            getSupportFragmentManager().beginTransaction()
-//                    .add(R.id.rental_detail_container, fragment)
-//                    .commit();
-        }
-
         mCollapsingToolbar = (CollapsingToolbarLayout) findViewById(R.id.toolbar_layout);
         mCollapsingToolbar.setTitle(mProvider.companyName);
         displayImageOnToolbar();
@@ -118,7 +97,7 @@ public class RentalDetailActivity extends AppCompatActivity {
         }
     }
 
-    //dynamically adding view to scroll view
+    //Dynamically adding new Child View to parent ScrollView
     public void createMyCarAdapter(){
         for(int i = 0; i < mCars.size(); i++){
             CarHolder carHolder = createCarItemView();
@@ -166,7 +145,7 @@ public class RentalDetailActivity extends AppCompatActivity {
     public void displayImageOnToolbar(){
         Random r = new Random();
         InputStream inputStream = null;
-        List<String> names = DummyRentalContent.getImageNames();
+        List<String> names = Utility.getImageNames();
 
         try {
             String imageName = names.get(r.nextInt(10));

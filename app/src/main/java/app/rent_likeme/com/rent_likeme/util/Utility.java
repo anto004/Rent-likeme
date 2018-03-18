@@ -5,7 +5,9 @@ import android.content.Context;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import app.rent_likeme.com.rent_likeme.R;
@@ -79,5 +81,15 @@ public class Utility {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
         return R * c;
+    }
+
+    public static List<String> getImageNames(){
+        List<String> names = new ArrayList<>();
+        for(int i = 1; i <= 10; i++) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("disney_car_").append(i).append(".jpeg");
+            names.add(sb.toString());
+        }
+        return names;
     }
 }

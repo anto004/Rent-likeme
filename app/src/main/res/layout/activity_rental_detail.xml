@@ -30,7 +30,7 @@
                 android:id="@+id/detail_image"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:contentDescription="Detail Image"
+                android:contentDescription="@string/detail_image"
                 android:fitsSystemWindows="true"
                 android:scaleType="centerCrop"
                 app:layout_collapseMode="parallax" />
@@ -84,7 +84,6 @@
                 android:layout_marginRight="?android:attr/windowTitleSize"
                 android:layout_marginTop="28dp"
                 android:gravity="center"
-                android:text="Company Name"
                 android:textStyle="bold" />
 
             <TextView
@@ -95,7 +94,6 @@
                 android:layout_gravity="center"
                 android:layout_marginBottom="28dp"
                 android:gravity="center"
-                android:text="line1, city, region, country"
                 android:textStyle="italic" />
 
             <LinearLayout

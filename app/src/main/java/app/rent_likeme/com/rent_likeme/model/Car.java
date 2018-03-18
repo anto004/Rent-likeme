@@ -14,7 +14,6 @@ import java.util.List;
  */
 
 public class Car implements Parcelable {
-
     @SerializedName("vehicle_info")
     @Expose
     public VehicleInfo vehicleInfo;
@@ -25,6 +24,8 @@ public class Car implements Parcelable {
     @Expose
     public EstimatedTotal estimatedTotal;
 
+    public Car() {
+    }
 
     @Override
     public int describeContents() {
@@ -36,9 +37,6 @@ public class Car implements Parcelable {
         dest.writeParcelable(this.vehicleInfo, flags);
         dest.writeList(this.rates);
         dest.writeParcelable(this.estimatedTotal, flags);
-    }
-
-    public Car() {
     }
 
     protected Car(Parcel in) {

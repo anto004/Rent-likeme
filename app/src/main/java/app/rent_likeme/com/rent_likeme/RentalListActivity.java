@@ -9,7 +9,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Location;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ResultReceiver;
@@ -21,10 +20,10 @@ import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -55,43 +54,32 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
-import app.rent_likeme.com.rent_likeme.map.GeocoderAddressService;
+import app.rent_likeme.com.rent_likeme.map.RentalIntentService;
 import app.rent_likeme.com.rent_likeme.model.Result;
-import app.rent_likeme.com.rent_likeme.util.JSONHelper.Results;
 import app.rent_likeme.com.rent_likeme.util.Utility;
 
 
 /**
- * An activity representing a list of Rentals. This activity
- * has different presentations for handset and tablet-size devices. On
- * handsets, the activity presents a list of items, which when touched,
- * lead to a {@link RentalDetailActivity} representing
- * item details. On tablets, the activity presents the list of items and
- * item details side-by-side using two vertical panes.
+ * created by anto004
  */
 public class RentalListActivity extends AppCompatActivity implements View.OnClickListener{
 
-    public static final String LOG_TAG = RentalListActivity.class.getSimpleName();
     private static final int FREQ_INTERVAL = 5000; //5 secs
     private static final int FAST_INTERVAL = 1000; //1 sec
     public static final int LOC_REQ_CODE = 200;
     public static final int ONE_WEEK_DROP_OFF = 3600 * 24 * 7 * 1000; //1 week ahead
     public static final String GLOBAL_PREFS = "rental_prefs";
-    public static final String ADDRESS_PREF = "address_prefs";
     public static final String PICK_UP_DATE_PREF = "pick_up_date";
     public static final String DROP_OFF_DATE_PREF = "drop_off_date";
     public static final String DIALOG_TAG = "date_picker";
     public static final String FRAG_VIEW_INFO = "frag_info";
-    private boolean mTwoPane;
     private RecyclerView mRecyclerView;
     private GoogleApiClient mGoogleApiClient;
     private Location mLocation;
     private Double mLatitude;
     private Double mLongitude;
     private PopupWindow mPopUpWindow;
-    private ProgressBar mProgressBar;
     private EditText mAddressTv;
     private RadioButton mCurrentLocButton;
     private RadioGroup mPopUpGroup;
@@ -99,6 +87,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     private List<Result> mResults;
     private View mPopUpView;
     private RentalAdapter mRentalAdapter;
+    public ProgressBar mProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -197,19 +186,11 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         mRecyclerView = findViewById(R.id.rental_list);
         assert mRecyclerView != null;
         setupRecyclerView((RecyclerView) mRecyclerView);
-
-        if (findViewById(R.id.rental_detail_container) != null) {
-            // The detail container view will be present only in the
-            // large-screen layouts (res/values-w900dp).
-            // If this view is present, then the
-            // activity should be in two-pane mode.
-            mTwoPane = true;
-        }
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
         mResults = new ArrayList<Result>();
-        mRentalAdapter = new RentalAdapter(this, mTwoPane, mResults);
+        mRentalAdapter = new RentalAdapter(this, mResults);
         recyclerView.setAdapter(mRentalAdapter);
     }
 
@@ -230,7 +211,6 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     @Override
     protected void onResume() {
         super.onResume();
-        Log.v(LOG_TAG, "onResume Called");
     }
 
     @Override
@@ -239,6 +219,16 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         return super.onCreateOptionsMenu(menu);
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.refresh_item:
+                mProgressBar.setVisibility(View.VISIBLE);
+                startIntentToFetchLatLong();
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
     private void closePopUpWindow(){
         mPopUpWindow.dismiss();
@@ -278,7 +268,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
                 callDatePickerFragment(R.id.drop_off_textview);
                 break;
             case R.id.rental_search_button:
-                //mProgressBar.setVisibility(View.VISIBLE);
+                mProgressBar.setVisibility(View.VISIBLE);
                 mAddressTv.clearFocus();
                 hideKeyboard();
                 startIntentToFetchLatLong();
@@ -298,34 +288,35 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
 
     public Integer getInputTypeToFetchLatLong(){
         if(mCurrentLocButton.isChecked()){
-            return GeocoderAddressService.ADDRESS_INPUT_LOCATION_KEY;
+            return RentalIntentService.ADDRESS_INPUT_LOCATION_KEY;
         }
         String address = mAddressTv.getText().toString();
         if(address.trim().length() == 0){
+            mProgressBar.setVisibility(View.GONE);
             Toast.makeText(this, "Address?", Toast.LENGTH_SHORT).show();
             return null;
         }
-        return GeocoderAddressService.ADDRESS_INPUT_NAME_KEY;
+        return RentalIntentService.ADDRESS_INPUT_NAME_KEY;
     }
     public void startIntentToFetchLatLong(){
         Integer inputType = getInputTypeToFetchLatLong();
         if(inputType == null){
             return;
         }
-        Intent intent = new Intent(this, GeocoderAddressService.class);
-        AddressResultReceiver resultReceiver = new AddressResultReceiver(null);
-        intent.putExtra(GeocoderAddressService.RETURN_RECEIVER_KEY, resultReceiver);
+        Intent intent = new Intent(this, RentalIntentService.class);
+        RentalResultReceiver resultReceiver = new RentalResultReceiver(new Handler());
+        intent.putExtra(RentalIntentService.RETURN_RECEIVER_KEY, resultReceiver);
         //using Radio button current location
-        if(inputType == GeocoderAddressService.ADDRESS_INPUT_LOCATION_KEY){
-            intent.putExtra(GeocoderAddressService.INPUT_TYPE_KEY, GeocoderAddressService.ADDRESS_INPUT_LOCATION_KEY);
-            intent.putExtra(GeocoderAddressService.LOCATION_LATITUDE_KEY, mLocation.getLatitude());
-            intent.putExtra(GeocoderAddressService.LOCATION_LONGITUDE_KEY, mLocation.getLongitude());
+        if(inputType == RentalIntentService.ADDRESS_INPUT_LOCATION_KEY){
+            intent.putExtra(RentalIntentService.INPUT_TYPE_KEY, RentalIntentService.ADDRESS_INPUT_LOCATION_KEY);
+            intent.putExtra(RentalIntentService.LOCATION_LATITUDE_KEY, mLocation.getLatitude());
+            intent.putExtra(RentalIntentService.LOCATION_LONGITUDE_KEY, mLocation.getLongitude());
         }
         //using typed address
-        if(inputType == GeocoderAddressService.ADDRESS_INPUT_NAME_KEY) {
-            intent.putExtra(GeocoderAddressService.INPUT_TYPE_KEY, GeocoderAddressService.ADDRESS_INPUT_NAME_KEY);
+        if(inputType == RentalIntentService.ADDRESS_INPUT_NAME_KEY) {
+            intent.putExtra(RentalIntentService.INPUT_TYPE_KEY, RentalIntentService.ADDRESS_INPUT_NAME_KEY);
             String address = mAddressTv.getText().toString();
-            intent.putExtra(GeocoderAddressService.ADDRESS_NAME_KEY, address);
+            intent.putExtra(RentalIntentService.ADDRESS_NAME_KEY, address);
         }
         startService(intent);
     }
@@ -443,71 +434,41 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         }
     }
 
-    class AddressResultReceiver extends ResultReceiver {
-        public AddressResultReceiver(Handler handler) {
+    class RentalResultReceiver extends ResultReceiver {
+        public RentalResultReceiver(Handler handler) {
             super(handler);
         }
 
         @Override
-        protected void onReceiveResult(int resultCode, final Bundle resultData) {
-            if(resultCode == GeocoderAddressService.RUNNING_RESULT) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mProgressBar.setVisibility(View.VISIBLE);
+        protected void onReceiveResult(final int resultCode, final Bundle resultData) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+
+                    switch (resultCode) {
+                        case RentalIntentService.RUNNING_RESULT:
+                            mProgressBar.setVisibility(View.VISIBLE);
+                            break;
+
+                        case RentalIntentService.SUCCESS_RESULT:
+                            mProgressBar.setVisibility(View.GONE);
+
+                            Address address = resultData.getParcelable(RentalIntentService.RESULT_ADDRESS_KEY);
+                            mLatitude = address.getLatitude();
+                            mLongitude = address.getLongitude();
+
+                            mResults = resultData.getParcelableArrayList(RentalIntentService.RESULT_DATA_KEY);
+                            displayRentalsByDistance(mResults);
+                            break;
+
+                        case RentalIntentService.FAILURE_RESULT:
+                            mProgressBar.setVisibility(View.GONE);
+                            Toast.makeText(RentalListActivity.this, "Invalid Address!", Toast.LENGTH_SHORT).show();
+                            break;
                     }
-                });
-            }
 
-            if(resultCode == GeocoderAddressService.SUCCESS_RESULT){
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Address address = resultData.getParcelable(GeocoderAddressService.RESULT_ADDRESS_KEY);
-                        mLatitude = address.getLatitude();
-                        mLongitude = address.getLongitude();
-
-                        SharedPreferences prefs = getSharedPreferences(GLOBAL_PREFS, MODE_PRIVATE);
-                        long pickUpLong = prefs.getLong(PICK_UP_DATE_PREF, mCalendar.getTimeInMillis());
-                        long dropOffLong = prefs.getLong(DROP_OFF_DATE_PREF, mCalendar.getTimeInMillis());
-
-                        Date date = new Date(pickUpLong);
-                        String pickUpDate = Utility.getCurrentDateFormat().format(date);
-                        date = new Date(dropOffLong);
-                        String dropOffDate = Utility.getCurrentDateFormat().format(date);
-
-                        if(address.hasLatitude() && address.hasLongitude()) {
-                            RentalFetcher.FetchRentalsTask fetchData = new RentalFetcher.FetchRentalsTask(
-                                    pickUpDate, dropOffDate);
-                            AsyncTask<Address, Void, Results> results = fetchData.execute(address);
-                            try {
-                                mProgressBar.setVisibility(View.GONE);
-                                mResults = results.get().getResults();
-                                if(mResults != null) {
-                                    displayRentalsByDistance(mResults);
-                                }
-                                else{
-                                    Toast.makeText(RentalListActivity.this, "Try a different date!",
-                                            Toast.LENGTH_SHORT).show();
-                                }
-
-                            } catch (InterruptedException | ExecutionException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                });
-            }
-            if(resultCode == GeocoderAddressService.FAILURE_RESULT){
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mProgressBar.setVisibility(View.GONE);
-                        Toast.makeText(RentalListActivity.this, "Invalid Address!", Toast.LENGTH_SHORT).show();
-
-                    }
-                });
-            }
+                }
+            });
         }
     }
 

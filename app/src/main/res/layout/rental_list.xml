@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:ems="10"
-        android:hint="Address"
+        android:hint="@string/address_hint"
         android:inputType="textAutoComplete|textPostalAddress"
         android:textColorHint="@android:color/darker_gray"
         android:textColorLink="@color/common_google_signin_btn_text_dark_focused" />
@@ -28,7 +28,7 @@
         android:layout_height="wrap_content"
         android:layout_toRightOf="@+id/address_editText"
         android:stateListAnimator="@animator/button_anim"
-        android:text="Search" />
+        android:text="@string/search_button" />
 
 
     <RadioButton
@@ -36,7 +36,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/address_editText"
-        android:text="Current Location" />
+        android:text="@string/current_location_radio_title" />
 
     <LinearLayout
         android:id="@+id/date_linearlayout"

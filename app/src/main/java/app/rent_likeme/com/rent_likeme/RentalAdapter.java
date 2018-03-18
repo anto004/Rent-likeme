@@ -3,10 +3,8 @@ package app.rent_likeme.com.rent_likeme;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,12 +26,10 @@ public class RentalAdapter extends
         RecyclerView.Adapter<RentalAdapter.ViewHolder> {
     private List<Result> mResultList;
     private Context mContext;
-    private boolean mTwoPane;
 
-    public RentalAdapter(Context context, Boolean twoPane, List<Result> items) {
+    public RentalAdapter(Context context, List<Result> items) {
         this.mContext = context;
         this.mResultList = items;
-        this.mTwoPane = twoPane;
     }
 
     @NonNull
@@ -53,26 +49,14 @@ public class RentalAdapter extends
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mTwoPane) {
-                    Bundle arguments = new Bundle();
-//                    arguments.putString(RentalDetailFragment.ARG_ITEM_ID, holder.mResult.id);
-                    RentalDetailFragment fragment = new RentalDetailFragment();
-                    fragment.setArguments(arguments);
+                Intent intent = new Intent(mContext, RentalDetailActivity.class);
+                intent.putExtra(RentalDetailActivity.PROVIDER_KEY, holder.mResult.provider);
+                intent.putExtra(RentalDetailActivity.ADDRESS_KEY, holder.mResult.address);
+                intent.putParcelableArrayListExtra(RentalDetailActivity.CAR_KEY, (ArrayList<? extends Parcelable>) holder.mResult.getCars());
+                mContext.startActivity(intent);
 
-                    FragmentActivity activity = (FragmentActivity) mContext;
-                    activity.getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.rental_detail_container, fragment)
-                            .commit();
-                } else {
-                    Intent intent = new Intent(mContext, RentalDetailActivity.class);
-                    intent.putExtra(RentalDetailActivity.PROVIDER_KEY, holder.mResult.provider);
-                    intent.putExtra(RentalDetailActivity.ADDRESS_KEY, holder.mResult.address);
-                    intent.putParcelableArrayListExtra(RentalDetailActivity.CAR_KEY, (ArrayList<? extends Parcelable>) holder.mResult.getCars());
-                    mContext.startActivity(intent);
-
-                    Activity activity = (Activity) mContext;
-                    activity.overridePendingTransition(R.anim.come_in_from_right, R.anim.go_out_left);
-                }
+                Activity activity = (Activity) mContext;
+                activity.overridePendingTransition(R.anim.come_in_from_right, R.anim.go_out_left);
             }
         });
     }

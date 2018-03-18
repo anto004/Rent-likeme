@@ -37,7 +37,7 @@
         android:layout_alignParentLeft="true"
         android:layout_below="@id/pop_up_linearLayout"
         android:paddingBottom="15dp"
-        android:text="Distance"
+        android:text="@string/distance_pop_up"
         android:textColor="@android:color/black"
         android:textSize="20sp" />
 
@@ -47,7 +47,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/pop_up_distance_textview"
         android:paddingBottom="15dp"
-        android:text="Company"
+        android:text="@string/company_pop_up"
         android:textColor="@android:color/black"
         android:textSize="20sp" />
 
@@ -57,7 +57,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/pop_up_company_textview"
         android:paddingBottom="15dp"
-        android:text="Price"
+        android:text="@string/price_pop_up"
         android:textColor="@android:color/black"
         android:textSize="20sp" />
 
@@ -74,7 +74,7 @@
             android:id="@+id/distance_checkBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Distance"/>
+            android:text="@string/distance_radio_title"/>
 
 
         <RadioButton
@@ -83,7 +83,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_below="@+id/distance_checkBox"
-            android:text="Company"/>
+            android:text="@string/company_radio_title"/>
 
         <RadioButton
             android:id="@+id/price_lowToHigh_checkBox"
@@ -91,7 +91,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_below="@+id/company_checkBox"
-            android:text="low->high" />
+            android:text="@string/low_high_title" />
 
         <RadioButton
             android:id="@+id/price_highToLow_checkBox"
@@ -99,7 +99,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_below="@+id/price_lowToHigh_checkBox"
-            android:text="high->low" />
+            android:text="@string/high_low_title" />
 
     </RadioGroup>
 </RelativeLayout>

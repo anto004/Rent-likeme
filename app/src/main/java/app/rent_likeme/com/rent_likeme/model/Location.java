@@ -8,12 +8,10 @@ import com.google.gson.annotations.SerializedName;
  */
 
 public class Location {
-
     @SerializedName("latitude")
     @Expose
     public Double latitude;
     @SerializedName("longitude")
     @Expose
     public Double longitude;
-
 }

@@ -19,6 +19,8 @@ public class Rate implements Parcelable {
     @Expose
     public Price price;
 
+    public Rate() {
+    }
 
     @Override
     public int describeContents() {
@@ -29,9 +31,6 @@ public class Rate implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.type);
         dest.writeParcelable(this.price, flags);
-    }
-
-    public Rate() {
     }
 
     protected Rate(Parcel in) {

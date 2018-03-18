@@ -7,4 +7,20 @@
     <!--price with $ format-->
     <string name="format_price"><xliff:g id="price">\u0024%.2f</xliff:g></string>
 
+    <string name="detail_image">Detail Image</string>
+    <string name="sort_by">Sort By</string>
+    <string name="category_list_item">Category:</string>
+    <string name="type_list_item">Type:</string>
+    <string name="price_list_item">Price:</string>
+    <string name="distance_pop_up">Distance</string>
+    <string name="company_pop_up">Company</string>
+    <string name="price_pop_up">Price</string>
+    <string name="distance_radio_title">Distance</string>
+    <string name="company_radio_title">Company</string>
+    <string name="low_high_title"><![CDATA[low->high]]></string>
+    <string name="high_low_title"><![CDATA[high->low]]></string>
+    <string name="address_hint">Address</string>
+    <string name="search_button">Search</string>
+    <string name="current_location_radio_title">Current Location</string>
+
 </resources>

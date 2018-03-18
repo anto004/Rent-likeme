@@ -11,7 +11,6 @@ import com.google.gson.annotations.SerializedName;
  */
 
 public class EstimatedTotal implements Parcelable {
-
     @SerializedName("amount")
     @Expose
     public String amount;

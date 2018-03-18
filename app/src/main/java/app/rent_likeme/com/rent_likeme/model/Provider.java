@@ -11,7 +11,6 @@ import com.google.gson.annotations.SerializedName;
  */
 
 public class Provider implements Parcelable {
-
     @SerializedName("company_code")
     @Expose
     public String companyCode;
@@ -20,7 +19,6 @@ public class Provider implements Parcelable {
     public String companyName;
 
     public Provider(){
-
     }
 
     protected Provider(Parcel in) {

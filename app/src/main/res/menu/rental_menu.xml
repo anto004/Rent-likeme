@@ -2,6 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/locate_item"
-        android:title="Locate" />
+        android:id="@+id/refresh_item"
+        android:title="Refresh" />
 </menu>

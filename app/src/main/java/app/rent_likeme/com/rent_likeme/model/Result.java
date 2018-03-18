@@ -53,7 +53,7 @@ public class Result implements Comparable<Result>,Parcelable {
         this.cars = cars;
     }
 
-    //With reference to provided location calculate the distance
+    //With reference to provided location calculate the distance using Haversine formula
     public double distance(){
         return Utility.calculateDistance(latitude, longitude,
                 this.location.latitude, this.location.longitude);

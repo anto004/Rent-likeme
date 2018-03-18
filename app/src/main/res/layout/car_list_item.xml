@@ -13,7 +13,7 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:layout_marginTop="16dp"
-        android:text="Category:"
+        android:text="@string/category_list_item"
         android:textAppearance="@android:style/TextAppearance.Material.Menu" />
 
     <TextView
@@ -23,7 +23,6 @@
         android:layout_marginLeft="5dp"
         android:layout_marginTop="16dp"
         android:layout_toRightOf="@id/category_description_textView"
-        android:text="Category"
         android:textAppearance="@android:style/TextAppearance.Material.Widget.TextView"
         android:textStyle="italic" />
 
@@ -34,7 +33,7 @@
         android:layout_below="@id/category_description_textView"
         android:layout_marginBottom="?android:attr/listPreferredItemPaddingEnd"
         android:layout_marginLeft="?attr/listPreferredItemPaddingLeft"
-        android:text="Type:"
+        android:text="@string/type_list_item"
         android:textAppearance="@android:style/TextAppearance.Material.Menu" />
 
     <TextView
@@ -45,7 +44,6 @@
         android:layout_marginLeft="5dp"
         android:layout_marginTop="5dp"
         android:layout_toRightOf="@+id/type_description_textView"
-        android:text="Type"
         android:textAppearance="@android:style/TextAppearance.Material.Widget.TextView"
         android:textStyle="italic" />
 
@@ -59,7 +57,7 @@
         android:layout_marginRight="5dp"
         android:layout_marginTop="@dimen/text_margin"
         android:layout_toLeftOf="@+id/price_textView"
-        android:text="Price:"
+        android:text="@string/price_list_item"
         android:textAppearance="@android:style/TextAppearance.Material.Menu" />
 
     <TextView
@@ -71,6 +69,5 @@
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
         android:layout_marginTop="18dp"
-        android:text="Price"
         android:textAppearance="@android:style/TextAppearance.Material.Widget.TextView" />
 </RelativeLayout>
