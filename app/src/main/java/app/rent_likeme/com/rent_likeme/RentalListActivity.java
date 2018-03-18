@@ -68,7 +68,8 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
     private static final int FREQ_INTERVAL = 5000; //5 secs
     private static final int FAST_INTERVAL = 1000; //1 sec
     public static final int LOC_REQ_CODE = 200;
-    public static final int ONE_WEEK_DROP_OFF = 3600 * 24 * 7 * 1000; //1 week ahead
+    public static final long TWO_WEEK_PICK_UP = 3600 * 24 * 7 * 1000 * 2; //2 week ahead
+    public static final long ONE_MONTH_DROP_OFF = TWO_WEEK_PICK_UP * 4; //4 week ahead
     public static final String GLOBAL_PREFS = "rental_prefs";
     public static final String PICK_UP_DATE_PREF = "pick_up_date";
     public static final String DROP_OFF_DATE_PREF = "drop_off_date";
@@ -161,7 +162,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         //setting current date by default to pickUp and dropOff
         mCalendar = Calendar.getInstance();
         SharedPreferences sharedPreferences = getSharedPreferences(GLOBAL_PREFS, MODE_PRIVATE);
-        Long pickUpDateLong = sharedPreferences.getLong(PICK_UP_DATE_PREF, 0);
+        Long pickUpDateLong = sharedPreferences.getLong(PICK_UP_DATE_PREF, 0L);
 
         if(pickUpDateLong > 0){
             String pickUpDate = Utility.convertLongToDate(pickUpDateLong);
@@ -174,7 +175,7 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
         TextView dropOffTv = findViewById(R.id.drop_off_textview);
         dropOffTv.setOnClickListener(this);
 
-        Long dropOffDateLong= sharedPreferences.getLong(DROP_OFF_DATE_PREF, 0);
+        Long dropOffDateLong= sharedPreferences.getLong(DROP_OFF_DATE_PREF, 0L);
         if(dropOffDateLong > 0){
             String dropOffDate = Utility.convertLongToDate(dropOffDateLong);
             dropOffTv.setText(dropOffDate);
@@ -323,10 +324,11 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
 
     public void setCurrentDateOnView(int viewId) {
         TextView textView = (TextView) findViewById(viewId);
-        long currentTimeInMillis = mCalendar.getTimeInMillis() + ONE_WEEK_DROP_OFF;
-        //Set current date for pickUp and one week later for dropOff
-        textView.setText(viewId == R.id.pick_up_textview ? Utility.getDateFormat().format(mCalendar.getTime())
-                                    : Utility.getDateFormat().format(new Date(currentTimeInMillis)));
+        long pickUpCurrentTimeInMillis = mCalendar.getTimeInMillis() + TWO_WEEK_PICK_UP;
+        long dropOffCurrentTimeInMillis = mCalendar.getTimeInMillis() + ONE_MONTH_DROP_OFF;
+        //Set current date for pickUp one week ahead and two weeks later for dropOff
+        textView.setText(viewId == R.id.pick_up_textview ? Utility.getDateFormat().format(new Date(pickUpCurrentTimeInMillis))
+                                    : Utility.getDateFormat().format(new Date(dropOffCurrentTimeInMillis)));
     }
 
     private void checkPermissions(){
@@ -463,7 +465,14 @@ public class RentalListActivity extends AppCompatActivity implements View.OnClic
 
                         case RentalIntentService.FAILURE_RESULT:
                             mProgressBar.setVisibility(View.GONE);
-                            Toast.makeText(RentalListActivity.this, "Invalid Address!", Toast.LENGTH_SHORT).show();
+                            String errorMsg = resultData.getString(RentalIntentService.RESULT_MESSAGE_KEY);
+                            assert errorMsg != null;
+                            if(errorMsg.equals(RentalIntentService.INVALID_ADDRESS_MSG)) {
+                                Toast.makeText(RentalListActivity.this, "Invalid Address!", Toast.LENGTH_SHORT).show();
+                            }
+                            else{
+                                Toast.makeText(RentalListActivity.this, "Choose a much later pick up, drop off date!", Toast.LENGTH_LONG).show();
+                            }
                             break;
                     }
 

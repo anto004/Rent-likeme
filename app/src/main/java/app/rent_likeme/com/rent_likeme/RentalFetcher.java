@@ -38,8 +38,6 @@ public class RentalFetcher extends AsyncTask<Address, Integer, Results> {
             double latitude = address.getLatitude();
             double longitude = address.getLongitude();
 
-            publishProgress(0);
-
             String rentalJsonStr = getJsonString(getUrl(latitude, longitude));
 
             if(rentalJsonStr != null) {
@@ -53,11 +51,6 @@ public class RentalFetcher extends AsyncTask<Address, Integer, Results> {
         return null;
     }
 
-    @Override
-    protected void onProgressUpdate(Integer... progress) {
-        super.onProgressUpdate(progress);
-
-    }
 
     @Override
     protected void onPostExecute(Results results) {
@@ -95,21 +88,26 @@ public class RentalFetcher extends AsyncTask<Address, Integer, Results> {
             urlConnection.setRequestMethod("GET");
             urlConnection.connect();
 
-            InputStream inputStream = urlConnection.getInputStream();
-            buffer = new StringBuffer();
-            if (inputStream == null) {
+            if(urlConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                InputStream inputStream = urlConnection.getInputStream();
+                buffer = new StringBuffer();
+                if (inputStream == null) {
+                    return null;
+                }
+                reader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    buffer.append(line);
+                }
+                if (buffer.length() == 0) {
+                    return null;
+                }
+                reader.close();
+                return buffer.toString();
+            }
+            else{
                 return null;
             }
-            reader = new BufferedReader(new InputStreamReader(inputStream));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                buffer.append(line);
-            }
-            if (buffer.length() == 0) {
-                return null;
-            }
-            reader.close();
-            return buffer.toString();
         } finally {
             if(urlConnection != null) {
                 urlConnection.disconnect();

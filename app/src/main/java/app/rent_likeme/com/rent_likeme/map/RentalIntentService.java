@@ -43,6 +43,7 @@ public class RentalIntentService extends IntentService {
     public static final String RESULT_DATA_KEY = "result_data";
     public static final String RESULT_MESSAGE_KEY = "result_message";
     public static final String RESULT_ADDRESS_KEY = "result_address";
+    public static final String INVALID_ADDRESS_MSG = "invalid_address";
     public static final String ADDRESS_NAME_KEY = "address_name";
     public static final String INPUT_TYPE_KEY = "input_type";
     public static final String LOCATION_LATITUDE_KEY = "location_latitude";
@@ -67,7 +68,7 @@ public class RentalIntentService extends IntentService {
         addressResult = getAddressUsingGeocoder(inputType, geocoder, intent);
 
         if(addressResult == null || addressResult.size() == 0){
-            deliverFailedResultToReceiver(FAILURE_RESULT);
+            deliverFailedResultToReceiver(FAILURE_RESULT, INVALID_ADDRESS_MSG);
         }
         else{
 
@@ -77,7 +78,7 @@ public class RentalIntentService extends IntentService {
                 List<Result> asyncTaskResults = callAsyncTask(address);
 
                 if(asyncTaskResults == null || asyncTaskResults.size() == 0){
-                    deliverFailedResultToReceiver(FAILURE_RESULT);
+                    deliverFailedResultToReceiver(FAILURE_RESULT, "Not Found");
                 }
                 else {
                     deliverSuccessResultToReceiver(SUCCESS_RESULT,
@@ -120,8 +121,8 @@ public class RentalIntentService extends IntentService {
 
         Calendar cal = Calendar.getInstance();
         SharedPreferences prefs = getSharedPreferences(RentalListActivity.GLOBAL_PREFS, MODE_PRIVATE);
-        long pickUpLong = prefs.getLong(PICK_UP_DATE_PREF, cal.getTimeInMillis());
-        long dropOffLong = prefs.getLong(DROP_OFF_DATE_PREF, cal.getTimeInMillis());
+        long pickUpLong = prefs.getLong(PICK_UP_DATE_PREF, cal.getTimeInMillis() + RentalListActivity.TWO_WEEK_PICK_UP);
+        long dropOffLong = prefs.getLong(DROP_OFF_DATE_PREF, cal.getTimeInMillis() + RentalListActivity.ONE_MONTH_DROP_OFF);
 
         Date date = new Date(pickUpLong);
         String pickUpDate = Utility.getCurrentDateFormat().format(date);
@@ -133,7 +134,9 @@ public class RentalIntentService extends IntentService {
             RentalFetcher fetchData = new RentalFetcher(pickUpDate, dropOffDate);
             AsyncTask<Address, Integer, JSONHelper.Results> results = fetchData.execute(address);
 
-            return results.get().getResults();
+            if(results != null && results.get() != null){
+                return results.get().getResults();
+            }
         }
 
         return null;
@@ -149,10 +152,9 @@ public class RentalIntentService extends IntentService {
         mResultReceiver.send(resultCode, bundle);
     }
 
-    private void deliverFailedResultToReceiver(int resultCode) {
+    private void deliverFailedResultToReceiver(int resultCode, String message) {
         Bundle bundle = new Bundle();
-        bundle.putString(RESULT_MESSAGE_KEY, "Not Found");
-
+        bundle.putString(RESULT_MESSAGE_KEY, message);
         mResultReceiver.send(resultCode, bundle);
     }
 }
